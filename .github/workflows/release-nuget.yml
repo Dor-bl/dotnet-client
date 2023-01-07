@@ -23,7 +23,9 @@ jobs:
     - name: Build
       run: |
         if ("${{github.ref}}".trim() -notmatch '^refs/tags/v(\d+\.\d+\.\d+)$') {
-          exit 1
+          else if ("${{github.ref}}".trim() -notmatch '^refs/tags/v(\d+\.\d+\.\d+\-beta\d+\d+)$') {
+            exit 1  
+          }
         }
         $version = $matches[1]
         dotnet build src/Appium.Net.sln --no-restore --configuration Release -p:Version=$version
