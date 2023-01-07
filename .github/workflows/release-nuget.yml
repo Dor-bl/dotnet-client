@@ -23,7 +23,7 @@ jobs:
     - name: Build
       run: |
         if ("${{github.ref}}".trim() -notmatch '^refs/tags/v(\d+\.\d+\.\d+)$') {
-          else if ("${{github.ref}}".trim() -notmatch '^refs/tags/v(\d+\.\d+\.\d+\-beta\d+\d+)$') {
+          elseif ("${{github.ref}}".trim() -notmatch '^refs/tags/v(\d+\.\d+\.\d+\-beta\d+\d+)$') {
             exit 1  
           }
         }
