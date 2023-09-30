@@ -1,8 +1,18 @@
 version: 2
 updates:
   - package-ecosystem: "nuget"
-    # Files stored in src/ppium.Net directory
+    # Files stored in src/Appium.Net directory
     directory: "/src/Appium.Net" 
+    schedule:
+      interval: "daily"
+    groups:
+      selenium-dependencies:
+        patterns:
+          - "Selenium.*" 
+
+  - package-ecosystem: "nuget"
+    # Files stored in test/integration directory
+    directory: "/test/integration" 
     schedule:
       interval: "daily"
 
@@ -11,4 +21,8 @@ updates:
     # default location of `.github/workflows`
     directory: "/"
     schedule:
+      # Check for updates to GitHub Actions every week
       interval: "weekly"
+    commit-message:
+      # Prefix all commit messages with "[github-actions] "
+      prefix: "[github-actions] "
