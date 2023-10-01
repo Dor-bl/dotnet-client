@@ -12,7 +12,7 @@ updates:
 
   - package-ecosystem: "nuget"
     # Files stored in test/integration directory
-    directory: "test/integration" 
+    directory: "/test/integration" 
     schedule:
       interval: "daily"
 
