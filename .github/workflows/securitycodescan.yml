@@ -32,7 +32,7 @@ jobs:
         run: dotnet restore src/Appium.Net.sln
 
       - name: Build
-        run: dotnet build --no-restore
+        run: dotnet build src/Appium.Net.sln --configuration Release --no-restore
 
       - name: Convert sarif for uploading to GitHub
         uses: security-code-scan/security-code-scan-results-action@cdb3d5e639054395e45bf401cba8688fcaf7a687
