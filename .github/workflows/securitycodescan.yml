@@ -36,11 +36,8 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore src/Appium.Net.sln
 
-      - name: Build with VSBuild
-        uses: microsoft/vs-build-tools-action@v2
-        with:
-          solution: 'src/Appium.Net.sln'
-          configuration: 'Release'
+      - name: Build with dotnet
+        run: dotnet build src/Appium.Net.sln --configuration Release --no-restore
 
       - name: Convert sarif for uploading to GitHub
         uses: security-code-scan/security-code-scan-results-action@cdb3d5e639054395e45bf401cba8688fcaf7a687
