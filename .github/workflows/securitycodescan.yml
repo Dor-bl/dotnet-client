@@ -29,7 +29,7 @@ jobs:
         uses: security-code-scan/security-code-scan-add-action@f8ff4f2763ed6f229eded80b1f9af82ae7f32a0d
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore src/Appium.Net.sln
 
       - name: Build
         run: dotnet build --no-restore
