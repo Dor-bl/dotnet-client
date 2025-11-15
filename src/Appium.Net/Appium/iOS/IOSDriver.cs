@@ -15,6 +15,7 @@
 using OpenQA.Selenium.Appium.Enums;
 using OpenQA.Selenium.Appium.Interfaces;
 using OpenQA.Selenium.Appium.Service;
+using OpenQA.Selenium.Appium.WebSocket;
 using System;
 using System.Drawing;
 using OpenQA.Selenium.Appium.iOS.Interfaces;
@@ -23,9 +24,11 @@ using System.Collections.Generic;
 namespace OpenQA.Selenium.Appium.iOS
 {
     public class IOSDriver : AppiumDriver, IHidesKeyboardWithKeyName, IHasClipboard,
-        IShakesDevice, IPerformsTouchID, IHasSettings
+        IShakesDevice, IPerformsTouchID, IHasSettings, IListensToSyslogMessages
     {
         private static readonly string Platform = MobilePlatform.IOS;
+        private static readonly StringWebSocketClient SyslogClient = new StringWebSocketClient();
+        private const int DefaultAppiumPort = 4723;
 
         /// <summary>
         /// Initializes a new instance of the IOSDriver class
@@ -302,5 +305,89 @@ namespace OpenQA.Selenium.Appium.iOS
                     }
                 ).ToString()
             );
+
+        #region Syslog Broadcast
+
+        /// <summary>
+        /// Start syslog messages broadcast via web socket.
+        /// This method assumes that Appium server is running on localhost and
+        /// is assigned to the default port (4723).
+        /// </summary>
+        public void StartSyslogBroadcast() => StartSyslogBroadcast("localhost", DefaultAppiumPort);
+
+        /// <summary>
+        /// Start syslog messages broadcast via web socket.
+        /// This method assumes that Appium server is assigned to the default port (4723).
+        /// </summary>
+        /// <param name="host">The name of the host where Appium server is running.</param>
+        public void StartSyslogBroadcast(string host) => StartSyslogBroadcast(host, DefaultAppiumPort);
+
+        /// <summary>
+        /// Start syslog messages broadcast via web socket.
+        /// </summary>
+        /// <param name="host">The name of the host where Appium server is running.</param>
+        /// <param name="port">The port of the host where Appium server is running.</param>
+        public void StartSyslogBroadcast(string host, int port)
+        {
+            ExecuteScript("mobile: startLogsBroadcast", new Dictionary<string, object>());
+            var endpointUri = new Uri($"ws://{host}:{port}/ws/session/{SessionId}/appium/device/syslog");
+            SyslogClient.ConnectAsync(endpointUri).Wait();
+        }
+
+        /// <summary>
+        /// Adds a new log messages broadcasting handler.
+        /// Several handlers might be assigned to a single server.
+        /// Multiple calls to this method will cause such handler
+        /// to be called multiple times.
+        /// </summary>
+        /// <param name="handler">A function, which accepts a single argument, which is the actual log message.</param>
+        public void AddSyslogMessagesListener(Action<string> handler) => 
+            SyslogClient.MessageHandlers.Add(handler);
+
+        /// <summary>
+        /// Adds a new log broadcasting errors handler.
+        /// Several handlers might be assigned to a single server.
+        /// Multiple calls to this method will cause such handler
+        /// to be called multiple times.
+        /// </summary>
+        /// <param name="handler">A function, which accepts a single argument, which is the actual exception instance.</param>
+        public void AddSyslogErrorsListener(Action<Exception> handler) => 
+            SyslogClient.ErrorHandlers.Add(handler);
+
+        /// <summary>
+        /// Adds a new log broadcasting connection handler.
+        /// Several handlers might be assigned to a single server.
+        /// Multiple calls to this method will cause such handler
+        /// to be called multiple times.
+        /// </summary>
+        /// <param name="handler">A function, which is executed as soon as the client is successfully connected to the web socket.</param>
+        public void AddSyslogConnectionListener(Action handler) => 
+            SyslogClient.ConnectionHandlers.Add(handler);
+
+        /// <summary>
+        /// Adds a new log broadcasting disconnection handler.
+        /// Several handlers might be assigned to a single server.
+        /// Multiple calls to this method will cause such handler
+        /// to be called multiple times.
+        /// </summary>
+        /// <param name="handler">A function, which is executed as soon as the client is successfully disconnected from the web socket.</param>
+        public void AddSyslogDisconnectionListener(Action handler) => 
+            SyslogClient.DisconnectionHandlers.Add(handler);
+
+        /// <summary>
+        /// Removes all existing syslog handlers.
+        /// </summary>
+        public void RemoveAllSyslogListeners() => SyslogClient.RemoveAllHandlers();
+
+        /// <summary>
+        /// Stops syslog messages broadcast via web socket.
+        /// </summary>
+        public void StopSyslogBroadcast()
+        {
+            ExecuteScript("mobile: stopLogsBroadcast", new Dictionary<string, object>());
+            SyslogClient.DisconnectAsync().Wait();
+        }
+
+        #endregion
     }
 }
