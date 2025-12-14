@@ -16,6 +16,7 @@ using OpenQA.Selenium.Appium.Service.Exceptions;
 using OpenQA.Selenium.Remote;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -35,7 +36,6 @@ namespace OpenQA.Selenium.Appium.Service
     {
         // P/Invoke declarations for Windows graceful shutdown
         private const int CTRL_C_EVENT = 0;
-        private const int CTRL_BREAK_EVENT = 1;
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool AttachConsole(uint dwProcessId);
@@ -185,7 +185,8 @@ namespace OpenQA.Selenium.Appium.Service
 
             try
             {
-                // Disable Ctrl-C handling for our own process
+                // Disable Ctrl-C handling for our own process to prevent it from being terminated
+                // when we send CTRL+C to the target process
                 SetConsoleCtrlHandler(null, true);
 
                 // Attach to the target process console
@@ -213,9 +214,9 @@ namespace OpenQA.Selenium.Appium.Service
                     return true;
                 }
             }
-            catch
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
             {
-                // If anything goes wrong, return false to fallback to Kill()
+                // If Windows API calls fail or process has already exited, return false to fallback to Kill()
                 try
                 {
                     FreeConsole();
@@ -223,7 +224,7 @@ namespace OpenQA.Selenium.Appium.Service
                 }
                 catch
                 {
-                    // Ignore cleanup errors
+                    // Ignore cleanup errors - we're already in error handling
                 }
             }
 
