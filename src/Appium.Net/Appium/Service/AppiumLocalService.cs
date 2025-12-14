@@ -22,6 +22,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpenQA.Selenium.Appium.Service
@@ -31,6 +33,24 @@ namespace OpenQA.Selenium.Appium.Service
     /// </summary>
     public class AppiumLocalService : ICommandServer
     {
+        // P/Invoke declarations for Windows graceful shutdown
+        private const int CTRL_C_EVENT = 0;
+        private const int CTRL_BREAK_EVENT = 1;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool AttachConsole(uint dwProcessId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool FreeConsole();
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GenerateConsoleCtrlEvent(uint dwCtrlEvent, uint dwProcessGroupId);
+
+        private delegate bool ConsoleCtrlDelegate(uint CtrlType);
+
         private readonly FileInfo NodeJS;
         private readonly string Arguments;
         private readonly IPAddress IP;
@@ -144,6 +164,72 @@ namespace OpenQA.Selenium.Appium.Service
             }
         }
 
+        /// <summary>
+        /// Attempts to gracefully shutdown the process on Windows by sending CTRL+C signal.
+        /// </summary>
+        /// <param name="process">The process to shutdown</param>
+        /// <param name="timeoutMs">Timeout in milliseconds to wait for graceful shutdown</param>
+        /// <returns>True if process exited gracefully, false otherwise</returns>
+        private bool TryGracefulShutdownOnWindows(Process process, int timeoutMs = 5000)
+        {
+            if (process == null || process.HasExited)
+            {
+                return true;
+            }
+
+            // Only attempt graceful shutdown on Windows
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return false;
+            }
+
+            try
+            {
+                // Disable Ctrl-C handling for our own process
+                SetConsoleCtrlHandler(null, true);
+
+                // Attach to the target process console
+                if (!AttachConsole((uint)process.Id))
+                {
+                    return false;
+                }
+
+                // Send CTRL+C event
+                if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0))
+                {
+                    FreeConsole();
+                    return false;
+                }
+
+                // Detach from the process console
+                FreeConsole();
+
+                // Re-enable Ctrl-C handling for our own process
+                SetConsoleCtrlHandler(null, false);
+
+                // Wait for the process to exit gracefully
+                if (process.WaitForExit(timeoutMs))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // If anything goes wrong, return false to fallback to Kill()
+                try
+                {
+                    FreeConsole();
+                    SetConsoleCtrlHandler(null, false);
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
+            }
+
+            return false;
+        }
+
         private void DestroyProcess()
         {
             if (Service == null)
@@ -153,7 +239,12 @@ namespace OpenQA.Selenium.Appium.Service
 
             try
             {
-                Service.Kill();
+                // First, attempt graceful shutdown on Windows
+                if (!TryGracefulShutdownOnWindows(Service))
+                {
+                    // If graceful shutdown fails or is not supported, use Kill
+                    Service.Kill();
+                }
             }
             catch
             {
