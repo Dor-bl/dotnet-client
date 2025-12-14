@@ -214,15 +214,28 @@ namespace OpenQA.Selenium.Appium.Service
                     return true;
                 }
             }
-            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
+            catch (Win32Exception)
             {
-                // If Windows API calls fail or process has already exited, return false to fallback to Kill()
+                // Windows API call failed, return false to fallback to Kill()
                 try
                 {
                     FreeConsole();
                     SetConsoleCtrlHandler(null, false);
                 }
-                catch
+                catch (Win32Exception)
+                {
+                    // Ignore cleanup errors - we're already in error handling
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Process has already exited, return false to fallback to Kill()
+                try
+                {
+                    FreeConsole();
+                    SetConsoleCtrlHandler(null, false);
+                }
+                catch (Win32Exception)
                 {
                     // Ignore cleanup errors - we're already in error handling
                 }
