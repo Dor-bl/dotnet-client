@@ -55,7 +55,7 @@ namespace Appium.Net.Integration.Tests.Android
             catch (Exception wx)
             {
                 var excpetionType =  wx.GetType();
-                Assert.That(typeof(WebDriverTimeoutException), Is.EqualTo(excpetionType));
+                Assert.That(excpetionType, Is.EqualTo(typeof(WebDriverTimeoutException)));
             }
         }
 
@@ -76,7 +76,7 @@ namespace Appium.Net.Integration.Tests.Android
             {
                 stopWatch.Stop();
                 TimeSpan ts = stopWatch.Elapsed;
-                Assert.That(_driverTimeOut.Seconds, Is.EqualTo(ts.Seconds));
+                Assert.That(ts.Seconds, Is.EqualTo(_driverTimeOut.Seconds));
             }
         }
 

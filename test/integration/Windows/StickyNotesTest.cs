@@ -22,7 +22,7 @@ using System;
 
 namespace Appium.Net.Integration.Tests.Windows
 {
-    public class StickyNotesTest
+    public abstract class StickyNotesTest
     {
         private const string StickyNotesAppId = @"Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe!App";
 

@@ -63,6 +63,7 @@ namespace Appium.Net.Integration.Tests.IOS
         }
 
         [Test]
+#pragma warning disable CA1416
         public void WhenSetClipboardContentTypeIsImage_GetClipboardShouldReturnEncodedBase64String()
         {
             var testImageBytes = _driver.GetScreenshot().AsByteArray;
@@ -72,13 +73,16 @@ namespace Appium.Net.Integration.Tests.IOS
             Assert.That(() => Regex.IsMatch(_driver.GetClipboard(ClipboardContentType.Image), Base64RegexPattern, RegexOptions.Multiline),
                 Is.True);
         }
+#pragma warning restore CA1416
 
         [Test]
+#pragma warning disable CA1416
         public void WhenClipboardHasNoImage_GetClipboardImageShouldReturnNull()
         {
             _driver.SetClipboardText(ClipboardTestString);
             Assert.That(() => _driver.GetClipboardImage(), Is.Null);
         }
+#pragma warning restore CA1416
 
         [Test]
         public void WhenClipboardIsEmpty_GetClipboardShouldReturnEmptyString()
