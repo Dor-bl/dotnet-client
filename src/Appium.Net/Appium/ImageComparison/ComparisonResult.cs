@@ -21,7 +21,30 @@ namespace OpenQA.Selenium.Appium.ImageComparison
 
         public void SaveVisualizationAsFile(string fileName)
         {
-            File.WriteAllBytes(fileName, Convert.FromBase64String(Visualization));
+            if (string.IsNullOrEmpty(fileName))
+            {
+                throw new ArgumentNullException(nameof(fileName));
+            }
+
+            if (fileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+            {
+                throw new ArgumentException("The file name contains invalid characters.", nameof(fileName));
+            }
+
+            string allowedDirectory = Path.GetFullPath(Directory.GetCurrentDirectory());
+            if (!allowedDirectory.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                allowedDirectory += Path.DirectorySeparatorChar;
+            }
+
+            string fullPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), fileName));
+
+            if (!fullPath.StartsWith(allowedDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new IOException("Path traversal or absolute path overwrite is not allowed. The file must be saved within the allowed directory.");
+            }
+
+            File.WriteAllBytes(fullPath, Convert.FromBase64String(Visualization));
         }
 
         protected Rectangle ConvertToRect(object value)
