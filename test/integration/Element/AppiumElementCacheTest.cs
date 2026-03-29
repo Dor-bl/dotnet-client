@@ -150,6 +150,22 @@ namespace Appium.Net.Integration.Tests.Element
         }
 
         [Test]
+        public void GetProperty_WithCacheEnabled_ReturnsCachedValue()
+        {
+            var propertyName = "text";
+            var expectedValue = "Sample Text";
+
+            _element.SetCacheValues(new Dictionary<string, object>
+            {
+                { "property/" + propertyName, expectedValue }
+            });
+
+            var propertyValue = _element.GetProperty(propertyName);
+
+            Assert.That(propertyValue, Is.EqualTo(expectedValue));
+        }
+
+        [Test]
         public void ClearCache_AfterSettingValues_ClearsAllCachedValues()
         {
             _element.SetCacheValues(new Dictionary<string, object>
