@@ -49,9 +49,25 @@ namespace OpenQA.Selenium.Appium.Service.Options
             }
             else
             {
+                IDictionary<string, object> originalDictionary = this.options.ToDictionary();
                 IDictionary<string, object> givenDictionary = options.ToDictionary();
+                IDictionary<string, object> result = new Dictionary<string, object>(originalDictionary);
 
                 foreach (var item in givenDictionary)
+                {
+                    if (originalDictionary.ContainsKey(item.Key))
+                    {
+                        result[item.Key] = item.Value;
+                    }
+                    else
+                    {
+                        result.Add(item.Key, item.Value);
+                    }
+                }
+
+                this.options = new AppiumOptions();
+
+                foreach (var item in result)
                 {
                     this.options.AddAdditionalAppiumOption(item.Key, item.Value);
                 }
@@ -62,30 +78,27 @@ namespace OpenQA.Selenium.Appium.Service.Options
 
         private string ParseCapabilitiesIfWindows(IDictionary<string, object> capabilitiesDictionary)
         {
-            var capabilities = new List<string>(capabilitiesDictionary?.Count ?? 0);
+            var capabilities = new List<string>();
 
-            if (capabilitiesDictionary != null)
+            foreach (var item in capabilitiesDictionary)
             {
-                foreach (var item in capabilitiesDictionary)
+                object value = item.Value;
+
+                if (value == null)
                 {
-                    object value = item.Value;
-
-                    if (value == null)
-                    {
-                        continue;
-                    }
-
-                    string formattedValue = GetFormattedWindowsCapabilityValue(item.Key, value);
-
-                    string key = $"\\\"{item.Key}\\\"";
-                    capabilities.Add($"{key}: {formattedValue}");
+                    continue;
                 }
+
+                value = GetFormattedCapabilityValue(item.Key, value);
+
+                string key = $"\\\"{item.Key}\\\"";
+                capabilities.Add($"{key}: {value}");
             }
 
             return $"\"{{{string.Join(", ", capabilities)}}}\"";
         }
 
-        private string GetFormattedWindowsCapabilityValue(string key, object value)
+        private object GetFormattedCapabilityValue(string key, object value)
         {
             if (typeof(string).IsAssignableFrom(value.GetType()))
             {
@@ -102,18 +115,13 @@ namespace OpenQA.Selenium.Appium.Service.Options
                 return Convert.ToString(value).ToLowerInvariant();
             }
 
-            return Convert.ToString(value);
+            return value;
         }
 
-        private string ParseCapabilitiesIfUNIX(IDictionary<string, object> capabilitiesDictionary)
+        private string ParseCapabilitiesIfUNIX(IDictionary<string, object> optionsDictionary)
         {
-            if (capabilitiesDictionary == null)
-            {
-                return string.Empty;
-            }
-
             // Serialize to JSON and escape double quotes so they survive argument parsing
-            var json = JsonSerializer.Serialize(capabilitiesDictionary);
+            var json = JsonSerializer.Serialize(optionsDictionary);
             // Escape double quotes with backslash for shell argument
             var escaped = json.Replace("\"", "\\\"");
             return $"\"{escaped}\"";
@@ -126,7 +134,7 @@ namespace OpenQA.Selenium.Appium.Service.Options
         {
             get
             {
-                List<string> result = [];
+                List<string> result = new List<string>();
                 var keys = CollectedArgs.Keys;
                 foreach (var key in keys)
                 {
@@ -142,18 +150,20 @@ namespace OpenQA.Selenium.Appium.Service.Options
                     }
                 }
 
-                var optionsDictionary = options?.ToDictionary();
-
-                if (optionsDictionary != null && optionsDictionary.Count > 0)
+                if (options != null)
                 {
-                    result.Add(CapabilitiesFlag);
-                    if (Platform.CurrentPlatform.IsPlatformType(PlatformType.Windows))
+                    var optionsDictionary = options.ToDictionary();
+                    if (optionsDictionary.Count > 0)
                     {
-                        result.Add(ParseCapabilitiesIfWindows(optionsDictionary));
-                    }
-                    else
-                    {
-                        result.Add(ParseCapabilitiesIfUNIX(optionsDictionary));
+                        result.Add(CapabilitiesFlag);
+                        if (Platform.CurrentPlatform.IsPlatformType(PlatformType.Windows))
+                        {
+                            result.Add(ParseCapabilitiesIfWindows(optionsDictionary));
+                        }
+                        else
+                        {
+                            result.Add(ParseCapabilitiesIfUNIX(optionsDictionary));
+                        }
                     }
                 }
 

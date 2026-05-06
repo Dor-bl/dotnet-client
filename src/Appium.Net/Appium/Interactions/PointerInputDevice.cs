@@ -15,6 +15,7 @@
 using OpenQA.Selenium.Interactions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenQA.Selenium.Appium.Interactions
 {
@@ -205,10 +206,7 @@ namespace OpenQA.Selenium.Appium.Interactions
                 Dictionary<string, object> toReturn = wrappedInteraction.ToDictionary();
 
                 // Append the original payload with the given pointer input extra attributes
-                foreach (var x in pointerInputExtraAttributes)
-                {
-                    toReturn[x.Key] = x.Value;
-                }
+                pointerInputExtraAttributes.ToList().ForEach(x => toReturn[x.Key] = x.Value);
 
                 return toReturn;
             }
