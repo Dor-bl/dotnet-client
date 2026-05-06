@@ -8,7 +8,6 @@ using OpenQA.Selenium.Support.UI;
 
 namespace Appium.Net.Integration.Tests.IOS
 {
-    [Category("iOS")]
     class ElementTests
     {
         private AppiumDriver _driver;
