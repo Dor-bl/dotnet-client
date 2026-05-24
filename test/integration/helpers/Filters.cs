@@ -7,11 +7,13 @@ namespace Appium.Net.Integration.Tests.helpers
     {
         public static IWebElement FirstWithName<TW>(IList<TW> els, string name) where TW : IWebElement
         {
-            for (var i = 0; i < els.Count; i++)
+            int count = els.Count;
+            for (var i = 0; i < count; i++)
             {
-                if (els[i].GetAttribute("name") == name)
+                var el = els[i];
+                if (el.GetAttribute("name") == name)
                 {
-                    return (TW) els[i];
+                    return (TW) el;
                 }
             }
             return null;
@@ -20,11 +22,13 @@ namespace Appium.Net.Integration.Tests.helpers
         public static IList<IWebElement> FilterWithName<TW>(IList<TW> els, string name) where TW : IWebElement
         {
             var res = new List<IWebElement>();
-            for (var i = 0; i < els.Count; i++)
+            int count = els.Count;
+            for (var i = 0; i < count; i++)
             {
-                if (els[i].GetAttribute("name") == name)
+                var el = els[i];
+                if (el.GetAttribute("name") == name)
                 {
-                    res.Add(els[i]);
+                    res.Add(el);
                 }
             }
             return res;
@@ -33,12 +37,13 @@ namespace Appium.Net.Integration.Tests.helpers
         public static IList<IWebElement> FilterDisplayed<TW>(IList<TW> els) where TW : IWebElement
         {
             var res = new List<IWebElement>();
-            for (var i = 0; i < els.Count; i++)
+            int count = els.Count;
+            for (var i = 0; i < count; i++)
             {
                 IWebElement el = els[i];
-                if (els[i].Displayed)
+                if (el.Displayed)
                 {
-                    res.Add(els[i]);
+                    res.Add(el);
                 }
             }
             return res;
