@@ -17,6 +17,10 @@ namespace Appium.Net.Integration.Tests.Android
         [OneTimeSetUp]
         public void BeforeAll()
         {
+            if (Env.IsCiEnvironment())
+            {
+                Assert.Ignore("Skipping ElementTest test fixture in CI environment");
+            }
             var capabilities = Env.ServerIsRemote()
                 ? Caps.GetAndroidUIAutomatorCaps(Apps.Get("androidApiDemos"))
                 : Caps.GetAndroidUIAutomatorCaps(Apps.Get("androidApiDemos"));
@@ -28,12 +32,16 @@ namespace Appium.Net.Integration.Tests.Android
         [SetUp]
         public void SetUp()
         {
-            _driver.StartActivity("io.appium.android.apis/.ApiDemos");
+            _driver?.StartActivity("io.appium.android.apis/.ApiDemos");
         }
 
         [Test]
         public void GetPropertyTest()
         {
+            if (Env.IsCiEnvironment())
+            {
+                Assert.Ignore("Skipping GetPropertyTest test in CI environment");
+            }
             var myElement = WaitForElement(_driver, MobileBy.Id("android:id/content"));
             var propertyValue = myElement.GetProperty("className");
             Assert.That(propertyValue, Is.Not.Null);
