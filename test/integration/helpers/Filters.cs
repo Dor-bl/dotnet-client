@@ -13,7 +13,7 @@ namespace Appium.Net.Integration.Tests.helpers
                 var el = els[i];
                 if (el.GetAttribute("name") == name)
                 {
-                    return (TW) el;
+                    return el;
                 }
             }
             return null;
