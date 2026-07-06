@@ -13,7 +13,6 @@
 //limitations under the License.
 
 using OpenQA.Selenium.Appium.Service.Exceptions;
-using OpenQA.Selenium.Remote;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -22,6 +21,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace OpenQA.Selenium.Appium.Service
@@ -29,7 +29,7 @@ namespace OpenQA.Selenium.Appium.Service
     /// <summary>
     /// Represents a local Appium server service that can be started and stopped programmatically.
     /// </summary>
-    public class AppiumLocalService : ICommandServer
+    public class AppiumLocalService : IDisposable
     {
         private readonly FileInfo NodeJS;
         private readonly string Arguments;
@@ -72,7 +72,7 @@ namespace OpenQA.Selenium.Appium.Service
         /// <summary>
         /// The base URL for the managed appium server.
         /// </summary>
-        public Uri ServiceUrl => new Uri($"http://{IP}:{Convert.ToString(Port)}");
+        public Uri ServiceUrl => new($"http://{IP}:{Convert.ToString(Port)}");
 
         /// <summary>
         /// Event that can be used to capture the output of the service
@@ -152,19 +152,86 @@ namespace OpenQA.Selenium.Appium.Service
             }
         }
 
-        private void DestroyProcess()
+        private bool TryGracefulShutdownOnWindows(Process process, int timeoutMs = 5000)
         {
-            if (Service == null)
-            {
-                return;
-            }
+            if (process == null)
+                return true;
 
+            // Safely check HasExited, handling disposed process
+            bool hasExited;
             try
             {
-                Service.Kill();
+                hasExited = process.HasExited;
+            }
+            catch (InvalidOperationException)
+            {
+                // Process is disposed, treat as exited
+                return true;
+            }
+
+            if (hasExited)
+                return true;
+
+            // Attempt graceful shutdown using managed code only
+            try
+            {
+                process.CloseMainWindow();
+                if (process.WaitForExit(timeoutMs))
+                    return true;
             }
             catch
             {
+                // Ignore exceptions, fallback to Kill
+            }
+
+            return false;
+        }
+
+        private int GetShutdownTimeoutWithBuffer()
+        {
+            // Default Appium shutdown timeout in ms
+            int shutdownTimeout = 5000;
+            const int bufferMs = 1000;
+
+            if (ArgsList == null)
+                GenerateArgsList();
+
+            int idx = ArgsList.IndexOf("--shutdown-timeout");
+            if (idx >= 0 && idx + 1 < ArgsList.Count)
+            {
+                if (int.TryParse(ArgsList[idx + 1], out int parsed))
+                    shutdownTimeout = parsed;
+            }
+
+            return shutdownTimeout + bufferMs;
+        }
+
+        private void DestroyProcess()
+        {
+            if (Service == null)
+                return;
+
+            try
+            {
+                int shutdownTimeout = GetShutdownTimeoutWithBuffer();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    // Attempt graceful shutdown on Windows
+                    if (!TryGracefulShutdownOnWindows(Service, shutdownTimeout))
+                    {
+                        Service.Kill();
+                    }
+                }
+                else
+                {
+                    // On non-Windows, just kill the process
+                    Service.Kill();
+                }
+            }
+            catch
+            {
+                // Optionally log or handle exceptions
             }
             finally
             {
@@ -284,7 +351,7 @@ namespace OpenQA.Selenium.Appium.Service
             status = CreateStatusUrl();
 
             DateTime endTime = DateTime.Now.Add(span);
-            while (!pinged & DateTime.Now < endTime)
+            while (!pinged && DateTime.Now < endTime)
             {
                 try
                 {
@@ -299,6 +366,7 @@ namespace OpenQA.Selenium.Appium.Service
                 {
                     pinged = false;
                 }
+                await Task.Delay(250).ConfigureAwait(false);
             }
             return pinged;
         }
