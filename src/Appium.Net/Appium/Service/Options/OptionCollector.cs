@@ -1,4 +1,4 @@
-﻿//Licensed under the Apache License, Version 2.0 (the "License");
+//Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
 //See the NOTICE file distributed with this work for additional
 //information regarding copyright ownership.
@@ -62,51 +62,49 @@ namespace OpenQA.Selenium.Appium.Service.Options
 
         private string ParseCapabilitiesIfWindows(IDictionary<string, object> capabilitiesDictionary)
         {
-            string result = string.Empty;
-
-            if (capabilitiesDictionary != null)
+            if (capabilitiesDictionary == null)
             {
-                foreach (var item in capabilitiesDictionary)
-                {
-                    object value = item.Value;
-
-                    if (value == null)
-                    {
-                        continue;
-                    }
-
-                    if (typeof(string).IsAssignableFrom(value.GetType()))
-                    {
-                        if (AppiumServiceConstants.FilePathCapabilitiesForWindows.Contains(item.Key))
-                        {
-                            value = $"\\\"{Convert.ToString(value).Replace("\\", "/")}\\\"";
-                        }
-                        else
-                        {
-                            value = $"\\\"{value}\\\"";
-                        }
-                    }
-                    else
-                    {
-                        if (typeof(bool).IsAssignableFrom(value.GetType()))
-                        {
-                            value = Convert.ToString(value).ToLowerInvariant();
-                        }
-                    }
-
-                    string key = $"\\\"{item.Key}\\\"";
-                    if (string.IsNullOrEmpty(result))
-                    {
-                        result = $"{key}: {value}";
-                    }
-                    else
-                    {
-                        result = result + ", " + key + ": " + value;
-                    }
-                }
+                return "\"{}\"";
             }
 
-            return "\"{" + result + "}\"";
+            var capabilities = new List<string>(capabilitiesDictionary.Count);
+
+            foreach (var item in capabilitiesDictionary)
+            {
+                object value = item.Value;
+
+                if (value == null)
+                {
+                    continue;
+                }
+
+                string formattedValue = GetFormattedWindowsCapabilityValue(item.Key, value);
+
+                string key = $"\\\"{item.Key}\\\"";
+                capabilities.Add($"{key}: {formattedValue}");
+            }
+
+            return $"\"{{{string.Join(", ", capabilities)}}}\"";
+        }
+
+        private string GetFormattedWindowsCapabilityValue(string key, object value)
+        {
+            if (typeof(string).IsAssignableFrom(value.GetType()))
+            {
+                if (AppiumServiceConstants.FilePathCapabilitiesForWindows.Contains(key))
+                {
+                    return $"\\\"{Convert.ToString(value).Replace("\\", "/")}\\\"";
+                }
+
+                return $"\\\"{value}\\\"";
+            }
+
+            if (typeof(bool).IsAssignableFrom(value.GetType()))
+            {
+                return Convert.ToString(value).ToLowerInvariant();
+            }
+
+            return Convert.ToString(value);
         }
 
         private string ParseCapabilitiesIfUNIX(IDictionary<string, object> capabilitiesDictionary)
