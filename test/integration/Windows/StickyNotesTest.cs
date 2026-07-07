@@ -40,12 +40,10 @@ namespace Appium.Net.Integration.Tests.Windows
                 {
                     // Create a new session to launch or bring up Sticky Notes application
                     // Note: All sticky note windows are parented to Modern_Sticky_Top_Window pane
-                    AppiumOptions appCapabilities = new()
-                    {
-                        App = StickyNotesAppId,
-                        DeviceName = "WindowsPC",
-                        AutomationName = "Windows"
-                    };
+                    AppiumOptions appCapabilities = new AppiumOptions();
+                    appCapabilities.App = StickyNotesAppId;
+                    appCapabilities.DeviceName = "WindowsPC";
+                    appCapabilities.AutomationName = "Windows";
                     session = new WindowsDriver(serverUri, appCapabilities);
                 }
                 catch
@@ -53,23 +51,19 @@ namespace Appium.Net.Integration.Tests.Windows
                     // When Sticky Notes application was previously launched, the creation above may fail.
                     // In such failure, simply look for the Modern_Sticky_Top_Window pane using the Desktop
                     // session and create a new session based on the located top window pane.
-                    AppiumOptions desktopCapabilities = new()
-                    {
-                        App = "Root",
-                        DeviceName = "WindowsPC",
-                        AutomationName = "Windows"
-                    };
-                    using var desktopSession = new WindowsDriver(serverUri, desktopCapabilities);
+                    AppiumOptions desktopCapabilities = new AppiumOptions();
+                    desktopCapabilities.App = "Root";
+                    desktopCapabilities.DeviceName = "WindowsPC";
+                    desktopCapabilities.AutomationName = "Windows";
+                    var desktopSession = new WindowsDriver(serverUri, desktopCapabilities);
 
                     var StickyNotesTopLevelWindow = desktopSession.FindElement(MobileBy.ClassName("Modern_Sticky_Top_Window"));
                     var StickyNotesTopLevelWindowHandle = StickyNotesTopLevelWindow.GetAttribute("NativeWindowHandle");
-                    StickyNotesTopLevelWindowHandle = int.Parse(StickyNotesTopLevelWindowHandle).ToString("x"); // Convert to Hex
+                    StickyNotesTopLevelWindowHandle = (int.Parse(StickyNotesTopLevelWindowHandle)).ToString("x"); // Convert to Hex
 
-                    var appCapabilities = new AppiumOptions
-                    {
-                        DeviceName = "WindowsPC"
-                    };
-                    appCapabilities.AddAdditionalAppiumOption("appTopLevelWindow", StickyNotesTopLevelWindowHandle);
+                    AppiumOptions appCapabilities = new AppiumOptions();
+                    appCapabilities.AddAdditionalOption("appTopLevelWindow", StickyNotesTopLevelWindowHandle);
+                    appCapabilities.DeviceName = "WindowsPC";
                     session = new WindowsDriver(serverUri, appCapabilities);
                 }
                 Assert.That(session, Is.Not.Null);
@@ -97,7 +91,7 @@ namespace Appium.Net.Integration.Tests.Windows
                         var newStickyNoteWindowHandle = openedStickyNotes[0].GetAttribute("NativeWindowHandle");
                         newStickyNoteWindowHandle = (int.Parse(newStickyNoteWindowHandle)).ToString("x"); // Convert to Hex
 
-                        AppiumOptions appCapabilities = new();
+                        AppiumOptions appCapabilities = new AppiumOptions();
                         appCapabilities.AddAdditionalAppiumOption("appTopLevelWindow", newStickyNoteWindowHandle);
                         appCapabilities.DeviceName = "WindowsPC";
                         var stickyNoteSession = new WindowsDriver(serverUri, appCapabilities);

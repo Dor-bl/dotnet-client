@@ -10,7 +10,7 @@ namespace Appium.Net.Integration.Tests.Android
     {
         private AndroidDriver _driver;
 
-        private IBiDi _bidi;
+        private BiDi _bidi;
 
         [OneTimeSetUp]
         public void BeforeAll()

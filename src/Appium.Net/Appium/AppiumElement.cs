@@ -155,6 +155,7 @@ namespace OpenQA.Selenium.Appium
                 () => base.GetCssValue(propertyName)
             )?.ToString();
 
+        //TODO: Add Integrations tests
         public string GetProperty(string propertyName) => CacheValue(
                 "property/" + propertyName,
                 () => base.GetDomProperty(propertyName)

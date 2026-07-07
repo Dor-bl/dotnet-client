@@ -28,54 +28,41 @@ namespace OpenQA.Selenium.Appium.WebSocket
         ICanHandleConnects, ICanHandleDisconnects, IDisposable
     {
         private ClientWebSocket _clientWebSocket;
-        private readonly SemaphoreSlim _connectionLock = new(1, 1);
+        private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
         private Uri _endpoint;
         private CancellationTokenSource _cancellationTokenSource;
         private Task _receiveTask;
-
-        private Action<string> _messageReceived;
-        private Action<Exception> _errorOccurred;
-        private Action _connected;
-        private Action _disconnected;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StringWebSocketClient"/> class.
         /// </summary>
         public StringWebSocketClient()
         {
+            MessageHandlers = new List<Action<string>>();
+            ErrorHandlers = new List<Action<Exception>>();
+            ConnectionHandlers = new List<Action>();
+            DisconnectionHandlers = new List<Action>();
         }
 
         /// <summary>
         /// Gets the list of all registered web socket message handlers.
         /// </summary>
-        public List<Action<string>> MessageHandlers => GetInvocationList<Action<string>>(_messageReceived);
+        public List<Action<string>> MessageHandlers { get; }
 
         /// <summary>
         /// Gets the list of all registered web socket error handlers.
         /// </summary>
-        public List<Action<Exception>> ErrorHandlers => GetInvocationList<Action<Exception>>(_errorOccurred);
+        public List<Action<Exception>> ErrorHandlers { get; }
 
         /// <summary>
         /// Gets the list of all registered web socket connection handlers.
         /// </summary>
-        public List<Action> ConnectionHandlers => GetInvocationList<Action>(_connected);
+        public List<Action> ConnectionHandlers { get; }
 
         /// <summary>
         /// Gets the list of all registered web socket disconnection handlers.
         /// </summary>
-        public List<Action> DisconnectionHandlers => GetInvocationList<Action>(_disconnected);
-
-        private static List<T> GetInvocationList<T>(Delegate handler) where T : Delegate
-        {
-            var invocationList = handler?.GetInvocationList();
-            if (invocationList == null) return new List<T>();
-            var list = new List<T>(invocationList.Length);
-            for (int i = 0; i < invocationList.Length; i++)
-            {
-                list.Add((T)invocationList[i]);
-            }
-            return list;
-        }
+        public List<Action> DisconnectionHandlers { get; }
 
         /// <summary>
         /// Gets the endpoint URI.
@@ -86,109 +73,45 @@ namespace OpenQA.Selenium.Appium.WebSocket
         /// Register a new message handler.
         /// </summary>
         /// <param name="handler">A callback function, which accepts the received message as a parameter.</param>
-        public void AddMessageHandler(Action<string> handler)
-        {
-            Action<string> existing, updated;
-            do { existing = _messageReceived; updated = existing + handler; }
-            while (Interlocked.CompareExchange(ref _messageReceived, updated, existing) != existing);
-        }
-
-        /// <summary>
-        /// Removes specific message handler.
-        /// </summary>
-        /// <param name="handler">A callback function to remove.</param>
-        public void RemoveMessageHandler(Action<string> handler)
-        {
-            Action<string> existing, updated;
-            do { existing = _messageReceived; updated = (Action<string>)Delegate.Remove(existing, handler); }
-            while (Interlocked.CompareExchange(ref _messageReceived, updated, existing) != existing);
-        }
+        public void AddMessageHandler(Action<string> handler) => MessageHandlers.Add(handler);
 
         /// <summary>
         /// Removes existing message handlers.
         /// </summary>
-        public void RemoveMessageHandlers() => Interlocked.Exchange(ref _messageReceived, null);
+        public void RemoveMessageHandlers() => MessageHandlers.Clear();
 
         /// <summary>
         /// Register a new error handler.
         /// </summary>
         /// <param name="handler">A callback function, which accepts the received exception instance as a parameter.</param>
-        public void AddErrorHandler(Action<Exception> handler)
-        {
-            Action<Exception> existing, updated;
-            do { existing = _errorOccurred; updated = existing + handler; }
-            while (Interlocked.CompareExchange(ref _errorOccurred, updated, existing) != existing);
-        }
-
-        /// <summary>
-        /// Removes specific error handler.
-        /// </summary>
-        /// <param name="handler">A callback function to remove.</param>
-        public void RemoveErrorHandler(Action<Exception> handler)
-        {
-            Action<Exception> existing, updated;
-            do { existing = _errorOccurred; updated = (Action<Exception>)Delegate.Remove(existing, handler); }
-            while (Interlocked.CompareExchange(ref _errorOccurred, updated, existing) != existing);
-        }
+        public void AddErrorHandler(Action<Exception> handler) => ErrorHandlers.Add(handler);
 
         /// <summary>
         /// Removes existing error handlers.
         /// </summary>
-        public void RemoveErrorHandlers() => Interlocked.Exchange(ref _errorOccurred, null);
+        public void RemoveErrorHandlers() => ErrorHandlers.Clear();
 
         /// <summary>
         /// Register a new connection handler.
         /// </summary>
         /// <param name="handler">A callback function, which is going to be executed when web socket connection event arrives.</param>
-        public void AddConnectionHandler(Action handler)
-        {
-            Action existing, updated;
-            do { existing = _connected; updated = existing + handler; }
-            while (Interlocked.CompareExchange(ref _connected, updated, existing) != existing);
-        }
-
-        /// <summary>
-        /// Removes specific connection handler.
-        /// </summary>
-        /// <param name="handler">A callback function to remove.</param>
-        public void RemoveConnectionHandler(Action handler)
-        {
-            Action existing, updated;
-            do { existing = _connected; updated = (Action)Delegate.Remove(existing, handler); }
-            while (Interlocked.CompareExchange(ref _connected, updated, existing) != existing);
-        }
+        public void AddConnectionHandler(Action handler) => ConnectionHandlers.Add(handler);
 
         /// <summary>
         /// Removes existing web socket connection handlers.
         /// </summary>
-        public void RemoveConnectionHandlers() => Interlocked.Exchange(ref _connected, null);
+        public void RemoveConnectionHandlers() => ConnectionHandlers.Clear();
 
         /// <summary>
         /// Register a new web socket disconnect handler.
         /// </summary>
         /// <param name="handler">A callback function, which is going to be executed when web socket disconnect event arrives.</param>
-        public void AddDisconnectionHandler(Action handler)
-        {
-            Action existing, updated;
-            do { existing = _disconnected; updated = existing + handler; }
-            while (Interlocked.CompareExchange(ref _disconnected, updated, existing) != existing);
-        }
-
-        /// <summary>
-        /// Removes specific disconnection handler.
-        /// </summary>
-        /// <param name="handler">A callback function to remove.</param>
-        public void RemoveDisconnectionHandler(Action handler)
-        {
-            Action existing, updated;
-            do { existing = _disconnected; updated = (Action)Delegate.Remove(existing, handler); }
-            while (Interlocked.CompareExchange(ref _disconnected, updated, existing) != existing);
-        }
+        public void AddDisconnectionHandler(Action handler) => DisconnectionHandlers.Add(handler);
 
         /// <summary>
         /// Removes existing disconnection handlers.
         /// </summary>
-        public void RemoveDisconnectionHandlers() => Interlocked.Exchange(ref _disconnected, null);
+        public void RemoveDisconnectionHandlers() => DisconnectionHandlers.Clear();
 
         /// <summary>
         /// Connects to a WebSocket endpoint.
@@ -227,7 +150,10 @@ namespace OpenQA.Selenium.Appium.WebSocket
                     await _clientWebSocket.ConnectAsync(endpoint, _cancellationTokenSource.Token);
                     
                     // Invoke connection handlers
-                    _connected?.Invoke();
+                    foreach (var handler in ConnectionHandlers.ToArray())
+                    {
+                        handler?.Invoke();
+                    }
 
                     // Start receiving messages
                     _receiveTask = Task.Run(ReceiveMessagesAsync);
@@ -235,13 +161,19 @@ namespace OpenQA.Selenium.Appium.WebSocket
                 catch (WebSocketException ex)
                 {
                     // Invoke error handlers
-                    _errorOccurred?.Invoke(ex);
+                    foreach (var handler in ErrorHandlers.ToArray())
+                    {
+                        handler?.Invoke(ex);
+                    }
                     throw new WebDriverException($"Failed to connect to WebSocket at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} UTC", ex);
                 }
                 catch (TaskCanceledException ex)
                 {
                     // Invoke error handlers
-                    _errorOccurred?.Invoke(ex);
+                    foreach (var handler in ErrorHandlers.ToArray())
+                    {
+                        handler?.Invoke(ex);
+                    }
                     throw new WebDriverException("WebSocket connection was cancelled", ex);
                 }
             }
@@ -288,12 +220,18 @@ namespace OpenQA.Selenium.Appium.WebSocket
                 catch (Exception ex)
                 {
                     // Invoke error handlers for errors during close
-                    _errorOccurred?.Invoke(ex);
+                    foreach (var handler in ErrorHandlers.ToArray())
+                    {
+                        handler?.Invoke(ex);
+                    }
                 }
                 finally
                 {
                     // Invoke disconnection handlers
-                    _disconnected?.Invoke();
+                    foreach (var handler in DisconnectionHandlers.ToArray())
+                    {
+                        handler?.Invoke();
+                    }
                 }
             }
 
@@ -306,10 +244,10 @@ namespace OpenQA.Selenium.Appium.WebSocket
         /// </summary>
         public void RemoveAllHandlers()
         {
-            Interlocked.Exchange(ref _messageReceived, null);
-            Interlocked.Exchange(ref _errorOccurred, null);
-            Interlocked.Exchange(ref _connected, null);
-            Interlocked.Exchange(ref _disconnected, null);
+            MessageHandlers.Clear();
+            ErrorHandlers.Clear();
+            ConnectionHandlers.Clear();
+            DisconnectionHandlers.Clear();
         }
 
         private async Task ReceiveMessagesAsync()
@@ -345,7 +283,10 @@ namespace OpenQA.Selenium.Appium.WebSocket
                         messageBuilder.Clear();
 
                         // Invoke message handlers
-                        _messageReceived?.Invoke(message);
+                        foreach (var handler in MessageHandlers.ToArray())
+                        {
+                            handler?.Invoke(message);
+                        }
                     }
                 }
             }
@@ -356,7 +297,10 @@ namespace OpenQA.Selenium.Appium.WebSocket
             catch (Exception ex)
             {
                 // Invoke error handlers
-                _errorOccurred?.Invoke(ex);
+                foreach (var handler in ErrorHandlers.ToArray())
+                {
+                    handler?.Invoke(ex);
+                }
             }
         }
 

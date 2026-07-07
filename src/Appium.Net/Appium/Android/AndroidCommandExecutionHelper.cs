@@ -12,10 +12,11 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
-using OpenQA.Selenium.Appium.Enums;
-using OpenQA.Selenium.Appium.Interfaces;
 using System;
+using OpenQA.Selenium.Appium.Interfaces;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using OpenQA.Selenium.Appium.Enums;
 
 namespace OpenQA.Selenium.Appium.Android
 {
@@ -23,8 +24,7 @@ namespace OpenQA.Selenium.Appium.Android
     {
         public static string GetCurrentActivity(IExecuteMethod executeMethod)
         {
-            return executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+            return executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:getCurrentActivity",
                 ["args"] = Array.Empty<object>()
             }).Value.ToString();
@@ -32,8 +32,7 @@ namespace OpenQA.Selenium.Appium.Android
 
         public static string GetCurrentPackage(IExecuteMethod executeMethod)
         {
-            return executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+            return executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:getCurrentPackage",
                 ["args"] = Array.Empty<object>()
             }).Value.ToString();
@@ -41,19 +40,15 @@ namespace OpenQA.Selenium.Appium.Android
 
         #region Device Network
 
-        public static void ToggleLocationServices(IExecuteMethod executeMethod)
-        {
-            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+        public static void ToggleLocationServices(IExecuteMethod executeMethod) {
+            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:toggleGps",
                 ["args"] = Array.Empty<object>()
             });
         }
 
-        public static void GsmCall(IExecuteMethod executeMethod, string number, GsmCallActions gsmCallAction)
-        {
-            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+        public static void GsmCall(IExecuteMethod executeMethod, string number, GsmCallActions gsmCallAction) {
+            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:gsmCall",
                 ["args"] = new object[] {
                     new Dictionary<string, object>() {
@@ -64,10 +59,8 @@ namespace OpenQA.Selenium.Appium.Android
             });
         }
 
-        public static void SendSms(IExecuteMethod executeMethod, string number, string message)
-        {
-            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+        public static void SendSms(IExecuteMethod executeMethod, string number, string message) {
+            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:sendSms",
                 ["args"] = new object[] {
                     new Dictionary<string, object>() {
@@ -80,8 +73,7 @@ namespace OpenQA.Selenium.Appium.Android
 
         public static void SetGsmStrength(IExecuteMethod executeMethod, GsmSignalStrength gsmSignalStrength)
         {
-            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:gsmSignal",
                 ["args"] = new object[] {
                     new Dictionary<string, object>() {
@@ -93,8 +85,7 @@ namespace OpenQA.Selenium.Appium.Android
 
         public static void SetGsmVoice(IExecuteMethod executeMethod, GsmVoiceState gsmVoiceState)
         {
-            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:gsmVoice",
                 ["args"] = new object[] {
                     new Dictionary<string, object>()
@@ -109,10 +100,8 @@ namespace OpenQA.Selenium.Appium.Android
 
         #region Device Performance
 
-        public static object[] GetPerformanceDataTypes(IExecuteMethod executeMethod)
-        {
-            return executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+        public static object[] GetPerformanceDataTypes(IExecuteMethod executeMethod) {
+            return executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:getPerformanceDataTypes",
                 ["args"] = Array.Empty<object>()
             }).Value as object[];
@@ -121,15 +110,15 @@ namespace OpenQA.Selenium.Appium.Android
         private static Dictionary<string, object> CreatePerformanceDataRequest(params (string Name, object Value)[] args)
         {
             var argDict = new Dictionary<string, object>();
-            foreach (var (Name, Value) in args)
+            foreach (var arg in args)
             {
-                argDict[Name] = Value;
+                argDict[arg.Name] = arg.Value;
             }
 
             return new Dictionary<string, object>
             {
                 ["script"] = "mobile:getPerformanceData",
-                ["args"] = argDict.Count == 0 ? [] : new object[] { argDict }
+                ["args"] = argDict.Count == 0 ? Array.Empty<object>() : new object[] { argDict }
             };
         }
 
@@ -158,8 +147,7 @@ namespace OpenQA.Selenium.Appium.Android
 
         public static void OpenNotifications(IExecuteMethod executeMethod)
         {
-            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:openNotifications",
                 ["args"] = Array.Empty<object>()
             });
@@ -167,8 +155,7 @@ namespace OpenQA.Selenium.Appium.Android
 
         public static IDictionary<string, object> GetSystemBars(IExecuteMethod executeMethod)
         {
-            return executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-            {
+            return executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
                 ["script"] = "mobile:getSystemBars",
                 ["args"] = Array.Empty<object>()
             }).Value as IDictionary<string, object>;
@@ -177,11 +164,10 @@ namespace OpenQA.Selenium.Appium.Android
         public static float GetDisplayDensity(IExecuteMethod executeMethod)
         {
             return Convert.ToSingle(
-                executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object>
-                {
-                    ["script"] = "mobile:getDisplayDensity",
-                    ["args"] = Array.Empty<object>()
-                }).Value);
+                executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
+                ["script"] = "mobile:getDisplayDensity",
+                ["args"] = Array.Empty<object>()
+            }).Value);
         }
 
         #endregion
@@ -326,14 +312,14 @@ namespace OpenQA.Selenium.Appium.Android
         }
 
         public static Dictionary<string, object> GetSettings(IExecuteMethod executeMethod) =>
-            (Dictionary<string, object>)executeMethod.Execute(AppiumDriverCommand.GetSettings).Value;
+            (Dictionary<string, object>) executeMethod.Execute(AppiumDriverCommand.GetSettings).Value;
 
         public static void SetSetting(IExecuteMethod executeMethod, string setting, object value)
         {
             var settings = new Dictionary<string, object>()
-            { [setting] = value };
+                {[setting] = value};
             var parameters = new Dictionary<string, object>()
-            { ["settings"] = settings };
+                {["settings"] = settings};
             executeMethod.Execute(AppiumDriverCommand.UpdateSettings, parameters);
         }
     }

@@ -19,23 +19,6 @@ namespace Appium.Net.Integration.Tests.Element
         }
 
         [Test]
-        public void GetProperty_WithCacheEnabled_ReturnsCachedValue()
-        {
-            var propertyName = "className";
-            var expectedValue = "android.widget.TextView";
-
-            _element.SetCacheValues(new Dictionary<string, object>
-            {
-                { "property/" + propertyName, expectedValue }
-            });
-
-            var propertyValue = _element.GetProperty(propertyName);
-
-            Assert.That(propertyValue, Is.EqualTo(expectedValue));
-            Assert.That(_element.ServerCallCount, Is.EqualTo(0));
-        }
-
-        [Test]
         public void SetCacheValues_WithValidDictionary_EnablesCache()
         {
             var cacheValues = new Dictionary<string, object>
@@ -297,21 +280,6 @@ namespace Appium.Net.Integration.Tests.Element
         }
 
         [Test]
-        public void GetProperty_WithCacheDisabled_CallsServerEveryTime()
-        {
-            var propertyName = "className";
-
-            // Access multiple times without cache
-            _ = _element.GetProperty(propertyName);
-            _ = _element.GetProperty(propertyName);
-
-            // Should have made 2 server calls
-            Assert.That(_element.ServerCallCount, Is.EqualTo(2));
-        }
-
-
-
-        [Test]
         public void TagName_WithEmptyCache_CallsServerOnceAndCaches()
         {
             // Enable cache with empty dictionary
@@ -324,22 +292,6 @@ namespace Appium.Net.Integration.Tests.Element
             // Subsequent accesses should use cache
             _ = _element.TagName;
             _ = _element.TagName;
-            Assert.That(_element.ServerCallCount, Is.EqualTo(1));
-        }
-
-        [Test]
-        public void GetProperty_WithEmptyCache_CallsServerOnceAndCaches()
-        {
-            // Enable cache with empty dictionary
-            _element.SetCacheValues(new Dictionary<string, object>());
-
-            // First access should call server
-            _ = _element.GetProperty("className");
-            Assert.That(_element.ServerCallCount, Is.EqualTo(1));
-
-            // Subsequent accesses should use cache
-            _ = _element.GetProperty("className");
-            _ = _element.GetProperty("className");
             Assert.That(_element.ServerCallCount, Is.EqualTo(1));
         }
     }

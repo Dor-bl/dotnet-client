@@ -175,9 +175,6 @@ namespace OpenQA.Selenium.Appium.Windows
 
         #endregion Context
 
-        public new void HideKeyboard(string key) =>
-            AppiumCommandExecutionHelper.HideKeyboard(this, key);
-
         public void PressKeyCode(KeyEvent keyEvent) => throw new NotImplementedException();
 
         public void LongPressKeyCode(KeyEvent keyEvent) => throw new NotImplementedException();

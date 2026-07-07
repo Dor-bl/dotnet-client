@@ -25,7 +25,7 @@ namespace OpenQA.Selenium.Appium.Service
         private const string IdempotencyHeader = "X-Idempotency-Key";
         private readonly AppiumClientConfig ClientConfig;
 
-        private readonly TimeSpan CommandTimeout;
+        private TimeSpan CommandTimeout;
 
         private static ICommandExecutor CreateRealExecutor(Uri remoteAddress, TimeSpan commandTimeout, AppiumClientConfig clientConfig)
         {

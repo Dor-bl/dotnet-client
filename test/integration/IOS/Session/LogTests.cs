@@ -8,8 +8,6 @@ using OpenQA.Selenium.Appium.iOS;
 
 namespace Appium.Net.Integration.Tests.IOS.Session.Logs
 {
-    [TestFixture]
-    [Category("iOS")]
     internal class LogTests
     {
         private IWebDriver _driver;

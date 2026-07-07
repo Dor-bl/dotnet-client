@@ -5,7 +5,6 @@ using OpenQA.Selenium.Appium.iOS;
 
 namespace Appium.Net.Integration.Tests.IOS
 {
-    [Category("iOS")]
     public class AppStringsTest
     {
         private AppiumDriver _driver;

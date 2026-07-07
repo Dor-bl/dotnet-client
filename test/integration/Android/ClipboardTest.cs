@@ -7,6 +7,8 @@ using System.Drawing;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 
+#pragma warning disable CA1416
+
 namespace Appium.Net.Integration.Tests.Android
 {
     [TestFixture]
@@ -24,6 +26,7 @@ namespace Appium.Net.Integration.Tests.Android
         {
             var capabilities = Caps.GetAndroidUIAutomatorCaps(Apps.Get("androidApiDemos"));
             capabilities.AddAdditionalAppiumOption(MobileCapabilityType.FullReset, true);
+            capabilities.AddAdditionalAppiumOption("appium:adbExecTimeout", 120000);
             var serverUri = Env.ServerIsRemote() ? AppiumServers.RemoteServerUri : AppiumServers.LocalServiceUri;
             _driver = new AndroidDriver(serverUri, capabilities, Env.InitTimeoutSec);
             _driver.Manage().Timeouts().ImplicitWait = Env.ImplicitTimeoutSec;
@@ -86,9 +89,6 @@ namespace Appium.Net.Integration.Tests.Android
         }
 
         [Test]
-#if !NET48
-        [SupportedOSPlatform("windows")]
-#endif
         public void WhenGetClipboardImageGetClipboardShouldReturnNotImplementedException()
         {
             Assert.That(() => _driver.GetClipboardImage(),
@@ -96,9 +96,6 @@ namespace Appium.Net.Integration.Tests.Android
         }
 
         [Test]
-#if !NET48
-        [SupportedOSPlatform("windows")]
-#endif
         public void WhenSetClipboardImageSetClipboardShouldReturnNotImplementedException()
         {
             // Arrange

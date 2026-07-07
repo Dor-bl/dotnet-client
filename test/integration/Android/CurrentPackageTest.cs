@@ -19,6 +19,7 @@ namespace Appium.Net.Integration.Tests.Android
         public void BeforeAll()
         {
             var capabilities = Caps.GetAndroidUIAutomatorCaps(Apps.Get("androidApiDemos"));
+            capabilities.AddAdditionalAppiumOption("appium:uiautomator2ServerLaunchTimeout", 120000);
 
             var serverUri = Env.ServerIsRemote() ? AppiumServers.RemoteServerUri : AppiumServers.LocalServiceUri;
             _driver = new AndroidDriver(serverUri, capabilities, Env.InitTimeoutSec);

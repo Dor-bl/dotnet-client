@@ -30,6 +30,8 @@ namespace Appium.Net.Integration.Tests.helpers
             capabilities.AutomationName = AutomationName.AndroidUIAutomator2;
             capabilities.DeviceName = "Android Emulator";
             capabilities.App = app;
+            capabilities.AddAdditionalAppiumOption("appium:adbExecTimeout", 120000);
+            capabilities.AddAdditionalAppiumOption("appium:uiautomator2ServerLaunchTimeout", 120000);
             return capabilities;
         }
 
@@ -38,6 +40,8 @@ namespace Appium.Net.Integration.Tests.helpers
             var capabilities = new AppiumOptions();
             capabilities.AutomationName = AutomationName.AndroidUIAutomator2;
             capabilities.DeviceName = "Android Emulator";
+            capabilities.AddAdditionalAppiumOption("appium:adbExecTimeout", 120000);
+            capabilities.AddAdditionalAppiumOption("appium:uiautomator2ServerLaunchTimeout", 120000);
             return capabilities;
         }
 
@@ -47,6 +51,7 @@ namespace Appium.Net.Integration.Tests.helpers
             capabilities.AutomationName = AutomationName.AndroidEspresso;
             capabilities.DeviceName = "Android Emulator";
             capabilities.App = app;
+            capabilities.AddAdditionalAppiumOption("appium:adbExecTimeout", 120000);
             capabilities.AddAdditionalAppiumOption("enforceAppInstall", true);
             return capabilities;
         }

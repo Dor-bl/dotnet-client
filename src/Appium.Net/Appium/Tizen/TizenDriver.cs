@@ -15,6 +15,7 @@
 using OpenQA.Selenium.Appium.Enums;
 using OpenQA.Selenium.Appium.Service;
 using System;
+using System.Collections.Generic;
 
 namespace OpenQA.Selenium.Appium.Tizen
 {
