@@ -75,11 +75,13 @@ namespace Appium.Net.Integration.Tests.IOS
         }
 
         [Test]
+#pragma warning disable CA1416
         public void WhenClipboardHasNoImage_GetClipboardImageShouldReturnNull()
         {
             _driver.SetClipboardText(ClipboardTestString);
             Assert.That(_driver.GetClipboardImage(), Is.Null);
         }
+#pragma warning restore CA1416
 
         [Test]
         public void WhenClipboardIsEmpty_GetClipboardShouldReturnEmptyString()
