@@ -178,9 +178,11 @@ namespace OpenQA.Selenium.Appium.Windows
         public new void HideKeyboard(string key) =>
             AppiumCommandExecutionHelper.HideKeyboard(this, key);
 
-        public void PressKeyCode(KeyEvent keyEvent) => throw new NotImplementedException();
+        public void PressKeyCode(KeyEvent keyEvent) =>
+            AppiumCommandExecutionHelper.PressKeyCode(this, keyEvent);
 
-        public void LongPressKeyCode(KeyEvent keyEvent) => throw new NotImplementedException();
+        public void LongPressKeyCode(KeyEvent keyEvent) =>
+            AppiumCommandExecutionHelper.LongPressKeyCode(this, keyEvent);
 
         public void PressKeyCode(int keyCode, int metastate = -1) =>
             AppiumCommandExecutionHelper.PressKeyCode(this, keyCode, metastate);
