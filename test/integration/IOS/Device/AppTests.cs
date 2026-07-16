@@ -91,7 +91,7 @@ namespace Appium.Net.Integration.Tests.IOS.Device.App
         public void CanActivateAppFromBackgroundTest()
         {
             //Activate an app to foreground
-            _driver.ActivateApp(IosTestAppBundleId);
+            _driver.ActivateApp(IosTestAppBundleId, TimeSpan.FromSeconds(20));
 
             WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(30));
 
@@ -99,7 +99,7 @@ namespace Appium.Net.Integration.Tests.IOS.Device.App
             Assert.DoesNotThrow((System.Action)(() => wait.Until(d => d.FindElement(MobileBy.AccessibilityId(IosTestAppElement)))));
 
             //Activates Test App to foreground from background
-            Assert.DoesNotThrow((System.Action)(() => _driver.ActivateApp(UiCatalogAppTestAppBundleId)));
+            Assert.DoesNotThrow((System.Action)(() => _driver.ActivateApp(UiCatalogAppTestAppBundleId, TimeSpan.FromSeconds(20))));
 
             //Verify the expected app was activated
             Assert.DoesNotThrow((System.Action)(() => wait.Until(d => d.FindElement(MobileBy.AccessibilityId(UiCatalogTestAppElement)))));
