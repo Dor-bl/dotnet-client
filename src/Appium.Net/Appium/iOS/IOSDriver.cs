@@ -200,6 +200,12 @@ namespace OpenQA.Selenium.Appium.iOS
         /// <param name="match">Whether to simulate biometric match.</param>
         public void PerformTouchID(bool match) => IOSCommandExecutionHelper.PerformTouchID(this, match);
 
+        /// <summary>
+        /// Enrolls/un-enrolls biometric authentication (TouchID/FaceID) on the simulator.
+        /// </summary>
+        /// <param name="enabled">Whether to enroll or un-enroll biometric authentication.</param>
+        public void ToggleTouchIdEnrollment(bool enabled) => IOSCommandExecutionHelper.ToggleTouchIdEnrollment(this, enabled);
+
         #region App Management
 
         /// <summary>
