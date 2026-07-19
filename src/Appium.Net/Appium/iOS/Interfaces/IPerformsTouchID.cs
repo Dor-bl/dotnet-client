@@ -19,8 +19,15 @@
          /// <summary>
          /// Simulate touchId event
          /// </summary>
-         /// <param name="match">If true, simulates a successful fingerprint scan. 
+         /// <param name="match">If true, simulates a successful fingerprint scan.
          /// If false, simulates a failed fingerprint scan.</param>
          void PerformTouchID(bool match);
+
+         /// <summary>
+         /// Enrolls/un-enrolls biometric authentication (TouchID/FaceID) on the simulator
+         /// </summary>
+         /// <param name="enabled">If true, enrolls biometric authentication.
+         /// If false, un-enrolls it.</param>
+         void ToggleTouchIdEnrollment(bool enabled);
      }
  }
