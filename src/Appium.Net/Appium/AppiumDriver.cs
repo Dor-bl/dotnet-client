@@ -339,15 +339,14 @@ namespace OpenQA.Selenium.Appium
             get
             {
                 var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.Contexts);
-                var contexts = new List<string>();
                 var objects = commandResponse.Value as object[];
 
-                if (null != objects && 0 < objects.Length)
+                if (null == objects || 0 == objects.Length)
                 {
-                    contexts.AddRange(objects.Select(o => o.ToString()));
+                    return Array.AsReadOnly(Array.Empty<string>());
                 }
 
-                return contexts.AsReadOnly();
+                return Array.AsReadOnly(Array.ConvertAll(objects, o => o.ToString()));
             }
         }
 
@@ -380,15 +379,15 @@ namespace OpenQA.Selenium.Appium
         /// <returns>List of available </returns>
         public List<string> GetIMEAvailableEngines()
         {
-            var retVal = new List<string>();
             var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.GetAvailableEngines);
             var objectArr = commandResponse.Value as object[];
-            if (null != objectArr)
+
+            if (null == objectArr)
             {
-                retVal.AddRange(objectArr.Select(val => val.ToString()));
+                return new List<string>();
             }
 
-            return retVal;
+            return new List<string>(Array.ConvertAll(objectArr, val => val.ToString()));
         }
 
         /// <summary>
