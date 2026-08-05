@@ -16,7 +16,6 @@ using OpenQA.Selenium.Appium.Enums;
 using OpenQA.Selenium.Appium.Interfaces;
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace OpenQA.Selenium.Appium
 {
