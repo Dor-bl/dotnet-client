@@ -261,9 +261,14 @@ namespace Appium.Net.Integration.Tests.Windows
         {
             if (newStickyNoteSession != null)
             {
-                // Create a new Sticky Note by pressing Ctrl + N
-                /////// TODO - Implement for Appium
-                //// newStickyNoteSession.Keyboard.SendKeys(Keys.Control + "d" + Keys.Control);
+                // Delete the currently opened Sticky Note by pressing Ctrl + D through the Actions API
+                KeyInputDevice keyboard = new KeyInputDevice();
+                ActionSequence sequence = new ActionSequence(keyboard, 0);
+                sequence.AddAction(keyboard.CreateKeyDown(Keys.Control[0]));
+                sequence.AddAction(keyboard.CreateKeyDown('d'));
+                sequence.AddAction(keyboard.CreateKeyUp('d'));
+                sequence.AddAction(keyboard.CreateKeyUp(Keys.Control[0]));
+                newStickyNoteSession.PerformActions(new List<ActionSequence> { sequence });
                 Thread.Sleep(TimeSpan.FromSeconds(2));
 
                 try
