@@ -134,8 +134,8 @@ namespace Appium.Net.Integration.Tests.Android
 
             Point point = new()
             {
-                X = (elementToTouch.Rect.X+elementToTouch.Rect.Width)/2,
-                Y = elementToTouch.Rect.Y
+                X = (elementToTouch.Location.X+elementToTouch.Size.Width)/2,
+                Y = elementToTouch.Location.Y
             };
 
             Interaction move = touch.CreatePointerMove(CoordinateOrigin.Viewport, point.X, point.Y, TimeSpan.Zero);
