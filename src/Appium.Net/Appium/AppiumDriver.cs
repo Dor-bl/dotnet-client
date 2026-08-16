@@ -302,11 +302,17 @@ namespace OpenQA.Selenium.Appium
             {
                 var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.GetLocation);
                 var locationValues = commandResponse.Value as Dictionary<string, object>;
+
+                if (locationValues == null)
+                {
+                    return new Location();
+                }
+
                 return new Location
                 {
-                    Altitude = Convert.ToDouble(locationValues["altitude"]),
-                    Latitude = Convert.ToDouble(locationValues["latitude"]),
-                    Longitude = Convert.ToDouble(locationValues["longitude"])
+                    Altitude = locationValues.TryGetValue("altitude", out var alt) ? Convert.ToDouble(alt) : 0.0,
+                    Latitude = locationValues.TryGetValue("latitude", out var lat) ? Convert.ToDouble(lat) : 0.0,
+                    Longitude = locationValues.TryGetValue("longitude", out var lon) ? Convert.ToDouble(lon) : 0.0
                 };
             }
             set
