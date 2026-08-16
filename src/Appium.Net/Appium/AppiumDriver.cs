@@ -301,13 +301,23 @@ namespace OpenQA.Selenium.Appium
             get
             {
                 var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.GetLocation);
-                var locationValues = commandResponse.Value as Dictionary<string, object>;
-                return new Location
+                var location = new Location();
+                if (commandResponse.Value is Dictionary<string, object> locationValues)
                 {
-                    Altitude = Convert.ToDouble(locationValues["altitude"]),
-                    Latitude = Convert.ToDouble(locationValues["latitude"]),
-                    Longitude = Convert.ToDouble(locationValues["longitude"])
-                };
+                    if (locationValues.TryGetValue("altitude", out var altitude))
+                    {
+                        location.Altitude = Convert.ToDouble(altitude);
+                    }
+                    if (locationValues.TryGetValue("latitude", out var latitude))
+                    {
+                        location.Latitude = Convert.ToDouble(latitude);
+                    }
+                    if (locationValues.TryGetValue("longitude", out var longitude))
+                    {
+                        location.Longitude = Convert.ToDouble(longitude);
+                    }
+                }
+                return location;
             }
             set
             {
