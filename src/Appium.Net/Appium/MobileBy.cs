@@ -1,4 +1,4 @@
-﻿//Licensed under the Apache License, Version 2.0 (the "License");
+//Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
 //See the NOTICE file distributed with this work for additional
 //information regarding copyright ownership.
@@ -16,7 +16,6 @@ using OpenQA.Selenium.Appium.Enums;
 using OpenQA.Selenium.Appium.Interfaces;
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace OpenQA.Selenium.Appium
 {
