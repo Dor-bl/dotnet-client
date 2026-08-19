@@ -341,7 +341,7 @@ namespace OpenQA.Selenium.Appium
                 var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.Contexts);
                 var objects = commandResponse.Value as object[];
 
-                if (null == objects || 0 == objects.Length)
+                if (objects == null || objects.Length == 0)
                 {
                     return Array.AsReadOnly(Array.Empty<string>());
                 }
@@ -382,12 +382,18 @@ namespace OpenQA.Selenium.Appium
             var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.GetAvailableEngines);
             var objectArr = commandResponse.Value as object[];
 
-            if (null == objectArr)
+            if (objectArr == null)
             {
                 return new List<string>();
             }
 
-            return new List<string>(Array.ConvertAll(objectArr, val => val.ToString()));
+            var engines = new List<string>(objectArr.Length);
+            foreach (var val in objectArr)
+            {
+                engines.Add(val.ToString());
+            }
+
+            return engines;
         }
 
         /// <summary>
