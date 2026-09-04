@@ -1,4 +1,4 @@
-﻿//Licensed under the Apache License, Version 2.0 (the "License");
+//Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
 //See the NOTICE file distributed with this work for additional
 //information regarding copyright ownership.
@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.Json;
 
 namespace OpenQA.Selenium.Appium.Service.Options
@@ -88,11 +89,53 @@ namespace OpenQA.Selenium.Appium.Service.Options
                 }
             }
 
-            // Serialize to JSON and escape double quotes so they survive argument parsing
+            // Serialize to JSON and escape for Windows command-line argument parsing
             var json = JsonSerializer.Serialize(processedCapabilities);
-            // Escape double quotes with backslash for shell argument
-            var escaped = json.Replace("\"", "\\\"");
-            return $"\"{escaped}\"";
+            return EscapeWindowsArgument(json);
+        }
+
+        private static string EscapeWindowsArgument(string argument)
+        {
+            if (string.IsNullOrEmpty(argument))
+            {
+                return "\"\"";
+            }
+
+            var sb = new StringBuilder();
+            sb.Append('"');
+
+            for (int i = 0; i < argument.Length; i++)
+            {
+                int backslashCount = 0;
+                while (i < argument.Length && argument[i] == '\\')
+                {
+                    backslashCount++;
+                    i++;
+                }
+
+                if (i == argument.Length)
+                {
+                    // Backslashes at the end of the argument must be doubled so the closing quote is not escaped
+                    sb.Append('\\', backslashCount * 2);
+                    break;
+                }
+
+                if (argument[i] == '"')
+                {
+                    // Backslashes followed by a quote must be doubled plus one to escape the quote
+                    sb.Append('\\', backslashCount * 2 + 1);
+                    sb.Append('"');
+                }
+                else
+                {
+                    // Backslashes not followed by a quote are emitted literally
+                    sb.Append('\\', backslashCount);
+                    sb.Append(argument[i]);
+                }
+            }
+
+            sb.Append('"');
+            return sb.ToString();
         }
 
         private string ParseCapabilitiesIfUNIX(IDictionary<string, object> capabilitiesDictionary)
