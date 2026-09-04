@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -302,19 +303,19 @@ namespace OpenQA.Selenium.Appium
             {
                 var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.GetLocation);
                 var location = new Location();
-                if (commandResponse.Value is Dictionary<string, object> locationValues)
+                if (commandResponse?.Value is Dictionary<string, object> locationValues)
                 {
-                    if (locationValues.TryGetValue("altitude", out var altitude))
+                    if (locationValues.TryGetValue("altitude", out var altitude) && TryConvertToDouble(altitude, out var altVal))
                     {
-                        location.Altitude = Convert.ToDouble(altitude);
+                        location.Altitude = altVal;
                     }
-                    if (locationValues.TryGetValue("latitude", out var latitude))
+                    if (locationValues.TryGetValue("latitude", out var latitude) && TryConvertToDouble(latitude, out var latVal))
                     {
-                        location.Latitude = Convert.ToDouble(latitude);
+                        location.Latitude = latVal;
                     }
-                    if (locationValues.TryGetValue("longitude", out var longitude))
+                    if (locationValues.TryGetValue("longitude", out var longitude) && TryConvertToDouble(longitude, out var lonVal))
                     {
-                        location.Longitude = Convert.ToDouble(longitude);
+                        location.Longitude = lonVal;
                     }
                 }
                 return location;
@@ -323,6 +324,62 @@ namespace OpenQA.Selenium.Appium
             {
                 var location = value ?? new Location();
                 Execute(AppiumDriverCommand.SetLocation, location.ToDictionary());
+            }
+        }
+
+        private static bool TryConvertToDouble(object value, out double result)
+        {
+            switch (value)
+            {
+                case double d:
+                    result = d;
+                    return true;
+                case float f:
+                    result = f;
+                    return true;
+                case int i:
+                    result = i;
+                    return true;
+                case long l:
+                    result = l;
+                    return true;
+                case short s:
+                    result = s;
+                    return true;
+                case decimal m:
+                    result = (double)m;
+                    return true;
+                case byte b:
+                    result = b;
+                    return true;
+                case sbyte sb:
+                    result = sb;
+                    return true;
+                case uint ui:
+                    result = ui;
+                    return true;
+                case ulong ul:
+                    result = ul;
+                    return true;
+                case ushort us:
+                    result = us;
+                    return true;
+                case string str:
+                    return double.TryParse(str, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out result);
+                case IConvertible convertible:
+                    try
+                    {
+                        result = convertible.ToDouble(CultureInfo.InvariantCulture);
+                        return true;
+                    }
+                    catch
+                    {
+                        result = 0.0;
+                        return false;
+                    }
+                default:
+                    result = 0.0;
+                    return false;
             }
         }
 
