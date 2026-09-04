@@ -96,12 +96,11 @@ namespace Appium.Net.Integration.Tests.Android
 
             var number1 = els.Count;
             var elementToTouch = els[2];
-            var location = elementToTouch.Location;
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
 
-            var move = touch.CreatePointerMove(CoordinateOrigin.Viewport, location.X, location.Y,TimeSpan.FromSeconds(1));
+            var move = touch.CreatePointerMove(elementToTouch, elementToTouch.Location.X, elementToTouch.Location.Y,TimeSpan.FromSeconds(1));
             var actionPress = touch.CreatePointerDown(PointerButton.TouchContact);
             var pause = touch.CreatePause(TimeSpan.FromMilliseconds(250));
             var actionRelease = touch.CreatePointerUp(PointerButton.TouchContact);
@@ -129,15 +128,14 @@ namespace Appium.Net.Integration.Tests.Android
             IList<AppiumElement> els = WaitForTextViewElements(3);
             var number1 = els.Count;
             var elementToTouch = els[2];
-            var rect = elementToTouch.Rect;
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
 
             Point point = new()
             {
-                X = (rect.X+rect.Width)/2,
-                Y = rect.Y
+                X = (elementToTouch.Rect.X+elementToTouch.Rect.Width)/2,
+                Y = elementToTouch.Rect.Y
             };
 
             Interaction move = touch.CreatePointerMove(CoordinateOrigin.Viewport, point.X, point.Y, TimeSpan.Zero);
@@ -168,13 +166,12 @@ namespace Appium.Net.Integration.Tests.Android
                 Assert.Ignore("Skipping ScrollActionTestCase test in CI environment");
             }
             AppiumElement ViewsElem = _driver.FindElement(MobileBy.AccessibilityId("Views"));
-            var location = ViewsElem.Location;
 
             ActionBuilder actionBuilder = new ActionBuilder();
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
 
-            var moveAction = touch.CreatePointerMove(CoordinateOrigin.Viewport, location.X, location.Y, TimeSpan.FromMilliseconds(0));
+            var moveAction = touch.CreatePointerMove(ViewsElem, 0, 0, TimeSpan.FromMilliseconds(0));
             actionBuilder.AddAction(moveAction);
             var tapAction = touch.CreatePointerDown(PointerButton.TouchContact);
             actionBuilder.AddAction(tapAction);
@@ -195,10 +192,10 @@ namespace Appium.Net.Integration.Tests.Android
 
             actionBuilder.ClearSequences();
 
-            actionBuilder.AddAction(touch.CreatePointerMove(CoordinateOrigin.Viewport, loc1.X, loc1.Y, TimeSpan.FromMilliseconds(800)));
+            actionBuilder.AddAction(touch.CreatePointerMove(origin, 0,0, TimeSpan.FromMilliseconds(800)));
             actionBuilder.AddAction(touch.CreatePointerDown(PointerButton.TouchContact));
             actionBuilder.AddAction(touch.CreatePause(TimeSpan.FromMilliseconds(800)));
-            actionBuilder.AddAction(touch.CreatePointerMove(CoordinateOrigin.Viewport, loc2.X, loc2.Y, TimeSpan.FromMilliseconds(800)));
+            actionBuilder.AddAction(touch.CreatePointerMove(target, 0, 0, TimeSpan.FromMilliseconds(800)));
             actionBuilder.AddAction(touch.CreatePointerUp(PointerButton.TouchContact));
 
             var sequenceActions = actionBuilder.ToActionSequenceList();
@@ -221,13 +218,12 @@ namespace Appium.Net.Integration.Tests.Android
                 Assert.Ignore("Skipping ScrollUsingAddActionsTestCase test in CI environment");
             }
             AppiumElement ViewsElem = _driver.FindElement(MobileBy.AccessibilityId("Views"));
-            var location = ViewsElem.Location;
 
             ActionBuilder actionBuilder = new ActionBuilder();
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
 
-            var moveAction = touch.CreatePointerMove(CoordinateOrigin.Viewport, location.X, location.Y, TimeSpan.FromMilliseconds(0));
+            var moveAction = touch.CreatePointerMove(ViewsElem, 0, 0, TimeSpan.FromMilliseconds(0));
             var tapAction = touch.CreatePointerDown(PointerButton.TouchContact);
             var tapActionPause = touch.CreatePause(TimeSpan.FromMilliseconds(400));
             var tapActionUp = touch.CreatePointerUp(PointerButton.TouchContact);
@@ -255,10 +251,10 @@ namespace Appium.Net.Integration.Tests.Android
 
             Interaction[] interactions = new Interaction[]
             {
-                touch.CreatePointerMove(CoordinateOrigin.Viewport, loc1.X, loc1.Y, TimeSpan.FromMilliseconds(800)),
+                touch.CreatePointerMove(origin, 0, 0, TimeSpan.FromMilliseconds(800)),
                 touch.CreatePointerDown(MouseButton.Touch),
                 touch.CreatePause(TimeSpan.FromMilliseconds(800)),
-                touch.CreatePointerMove(CoordinateOrigin.Viewport, loc2.X, loc2.Y, TimeSpan.FromMilliseconds(800)),
+                touch.CreatePointerMove(target, 0, 0, TimeSpan.FromMilliseconds(800)),
                 touch.CreatePointerUp(MouseButton.Touch)
             };
 
