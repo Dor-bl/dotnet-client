@@ -1,0 +1,60 @@
+--- src/Appium.Net/Appium/AppiumDriver.cs
++++ src/Appium.Net/Appium/AppiumDriver.cs
+@@ -23,6 +23,7 @@
+ using System.Collections;
+ using System.Collections.Generic;
+ using System.Collections.ObjectModel;
++using System.Globalization;
+ using System.IO;
+ using System.Linq;
+ using System.Text;
+@@ -301,13 +302,23 @@
+             get
+             {
+                 var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.GetLocation);
+-                var locationValues = commandResponse.Value as Dictionary<string, object>;
+-                return new Location
++                var location = new Location();
++                if (commandResponse.Value is Dictionary<string, object> locationValues)
+                 {
+-                    Altitude = Convert.ToDouble(locationValues["altitude"]),
+-                    Latitude = Convert.ToDouble(locationValues["latitude"]),
+-                    Longitude = Convert.ToDouble(locationValues["longitude"])
+-                };
++                    if (locationValues.TryGetValue("altitude", out var altitude))
++                    {
++                        location.Altitude = TryConvertToDouble(altitude);
++                    }
++                    if (locationValues.TryGetValue("latitude", out var latitude))
++                    {
++                        location.Latitude = TryConvertToDouble(latitude);
++                    }
++                    if (locationValues.TryGetValue("longitude", out var longitude))
++                    {
++                        location.Longitude = TryConvertToDouble(longitude);
++                    }
++                }
++                return location;
+             }
+             set
+             {
+@@ -316,6 +327,19 @@
+             }
+         }
+
++        private double TryConvertToDouble(object value)
++        {
++            if (value == null) return 0.0;
++            try
++            {
++                return Convert.ToDouble(value, CultureInfo.InvariantCulture);
++            }
++            catch
++            {
++                return 0.0;
++            }
++        }
++
+         #endregion MJsonMethod Members
+
+         #region Context
