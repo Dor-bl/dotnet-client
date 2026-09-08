@@ -69,7 +69,7 @@ namespace Appium.Net.Integration.Tests.Android
                 WebDriverWait wait = new WebDriverWait(_driver, previousImplicitWait.TotalSeconds > 0 ? previousImplicitWait : TimeSpan.FromSeconds(10));
                 return wait.Until(d =>
                 {
-                    var els = ((AndroidDriver)d).FindElements(MobileBy.ClassName("android.widget.TextView"));
+                    var els = _driver.FindElements(MobileBy.ClassName("android.widget.TextView"));
                     return els.Count >= minimumCount ? els : null;
                 });
             }
@@ -117,21 +117,7 @@ namespace Appium.Net.Integration.Tests.Android
 
             _driver.PerformActions(actions_seq);
 
-            var previousImplicitWait = _driver.Manage().Timeouts().ImplicitWait;
-            _driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try
-            {
-                WebDriverWait wait = new WebDriverWait(_driver, previousImplicitWait.TotalSeconds > 0 ? previousImplicitWait : TimeSpan.FromSeconds(10));
-                els = wait.Until(d =>
-                {
-                    var currentEls = ((AndroidDriver)d).FindElements(MobileBy.ClassName("android.widget.TextView"));
-                    return currentEls.Count != number1 ? currentEls : null;
-                });
-            }
-            finally
-            {
-                _driver.Manage().Timeouts().ImplicitWait = previousImplicitWait;
-            }
+            els = _driver.FindElements(MobileBy.ClassName("android.widget.TextView"));
 
             Assert.That(els, Has.Count.Not.EqualTo(number1));
         }

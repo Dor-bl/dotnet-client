@@ -1,0 +1,11 @@
+--- test/integration/Android/ActionsChainsTest.cs
++++ test/integration/Android/ActionsChainsTest.cs
+@@ -100,7 +100,7 @@
+             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
+             var sequence = new ActionSequence(touch);
+
+-            var move = touch.CreatePointerMove(elementToTouch, elementToTouch.Location.X, elementToTouch.Location.Y,TimeSpan.FromSeconds(1));
++            var move = touch.CreatePointerMove(elementToTouch, 0, 0, TimeSpan.FromSeconds(1));
+             var actionPress = touch.CreatePointerDown(PointerButton.TouchContact);
+             var pause = touch.CreatePause(TimeSpan.FromMilliseconds(250));
+             var actionRelease = touch.CreatePointerUp(PointerButton.TouchContact);

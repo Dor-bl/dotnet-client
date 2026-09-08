@@ -21,7 +21,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -112,7 +111,7 @@ namespace OpenQA.Selenium.Appium
         {
         }
 
-        #endregion Constructors        
+        #endregion Constructors
 
         #region Public Methods
 
@@ -184,7 +183,7 @@ namespace OpenQA.Selenium.Appium
                 throw new NotSupportedException("Custom commands can only be registered with HttpCommandExecutor or AppiumCommandExecutor.");
             }
         }
-        
+
         /// <summary> Execute a custom command in the command executor. </summary>
         /// <param name="commandName"> The name of the command to execute. </param>
         /// <param name="parameters"> The parameters of the command to execute. </param>
@@ -302,41 +301,18 @@ namespace OpenQA.Selenium.Appium
             get
             {
                 var commandResponse = ((IExecuteMethod)this).Execute(AppiumDriverCommand.GetLocation);
-                var location = new Location();
-                if (commandResponse.Value is Dictionary<string, object> locationValues)
+                var locationValues = commandResponse.Value as Dictionary<string, object>;
+                return new Location
                 {
-                    if (locationValues.TryGetValue("altitude", out var altitude))
-                    {
-                        location.Altitude = TryConvertToDouble(altitude);
-                    }
-                    if (locationValues.TryGetValue("latitude", out var latitude))
-                    {
-                        location.Latitude = TryConvertToDouble(latitude);
-                    }
-                    if (locationValues.TryGetValue("longitude", out var longitude))
-                    {
-                        location.Longitude = TryConvertToDouble(longitude);
-                    }
-                }
-                return location;
+                    Altitude = Convert.ToDouble(locationValues["altitude"]),
+                    Latitude = Convert.ToDouble(locationValues["latitude"]),
+                    Longitude = Convert.ToDouble(locationValues["longitude"])
+                };
             }
             set
             {
                 var location = value ?? new Location();
                 Execute(AppiumDriverCommand.SetLocation, location.ToDictionary());
-            }
-        }
-
-        private double TryConvertToDouble(object value)
-        {
-            if (value == null) return 0.0;
-            try
-            {
-                return Convert.ToDouble(value, CultureInfo.InvariantCulture);
-            }
-            catch
-            {
-                return 0.0;
             }
         }
 

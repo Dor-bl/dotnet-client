@@ -14,6 +14,7 @@ namespace Appium.Net.Integration.Tests.helpers
             capabilities.PlatformVersion =  Environment.GetEnvironmentVariable("IOS_VERSION") ?? "26.0";
             capabilities.App = app;
             capabilities.AddAdditionalAppiumOption(IOSMobileCapabilityType.LaunchTimeout, Env.InitTimeoutSec.TotalMilliseconds);
+            capabilities.AddAdditionalAppiumOption("appium:wdaLaunchTimeout", Env.InitTimeoutSec.TotalMilliseconds);
 
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LOCAL_PREBUILT_WDA")))
             {
