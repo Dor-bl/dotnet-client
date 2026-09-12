@@ -191,6 +191,43 @@ jobs:
         wait_for_boot: true
         shutdown_after_job: false
 
+    # `wait_for_boot` only confirms the simulator reports "Booted"; it doesn't confirm
+    # SpringBoard/FrontBoard are ready to register a freshly-installed app. Installing
+    # and launching WDA here, before Appium does it as part of session creation, moves
+    # that race (and a retry loop) out of the test run - see https://github.com/appium/dotnet-client/issues/1032.
+    - name: Warm up WebDriverAgent on simulator
+      timeout-minutes: 3
+      run: |
+        set -e
+
+        UDID=$(xcrun simctl list devices booted | grep -Eo '[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}' | head -n 1)
+        if [ -z "$UDID" ]; then
+          echo "No booted simulator found"
+          exit 1
+        fi
+        echo "Booted simulator UDID: $UDID"
+        xcrun simctl bootstatus "$UDID" -b
+
+        WDA_APP="${{ github.workspace }}/wda/WebDriverAgentRunner-Runner.app"
+        echo "Installing WebDriverAgent from $WDA_APP"
+        xcrun simctl install "$UDID" "$WDA_APP"
+
+        echo "Warming up WebDriverAgent launch to avoid a FrontBoard registration race"
+        attempt=1
+        max_attempts=20
+        until xcrun simctl launch "$UDID" com.facebook.WebDriverAgentRunner.xctrunner; do
+          if [ "$attempt" -ge "$max_attempts" ]; then
+            echo "WebDriverAgent failed to launch after $max_attempts attempts"
+            exit 1
+          fi
+          echo "Launch attempt $attempt failed, retrying in 3s..."
+          attempt=$((attempt + 1))
+          sleep 3
+        done
+
+        echo "WebDriverAgent launched successfully, terminating warm-up instance"
+        xcrun simctl terminate "$UDID" com.facebook.WebDriverAgentRunner.xctrunner || true
+
     - name: Restore dependencies
       run: dotnet restore Appium.Net.sln
 
