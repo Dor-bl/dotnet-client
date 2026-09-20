@@ -32,14 +32,15 @@ namespace OpenQA.Selenium.Appium.Service
     public class AppiumLocalService : IDisposable
     {
         private readonly FileInfo NodeJS;
-        private readonly string Arguments;
+        private readonly IReadOnlyList<string> ArgsList;
         private readonly IPAddress IP;
         private readonly int Port;
         private readonly TimeSpan InitializationTimeout;
         private readonly IDictionary<string, string> EnvironmentForProcess;
         private readonly HttpClient SharedHttpClient;
         private Process Service;
-        private List<string> ArgsList;
+
+        private string Arguments => string.Join(" ", ArgsList ?? Array.Empty<string>());
 
         /// <summary>
         /// Creates an instance of AppiumLocalService without special settings
@@ -49,7 +50,7 @@ namespace OpenQA.Selenium.Appium.Service
 
         internal AppiumLocalService(
             FileInfo nodeJS,
-            string arguments,
+            IReadOnlyList<string> argsList,
             IPAddress ip,
             int port,
             TimeSpan initializationTimeout,
@@ -57,11 +58,100 @@ namespace OpenQA.Selenium.Appium.Service
         {
             NodeJS = nodeJS;
             IP = ip;
-            Arguments = arguments;
+            ArgsList = argsList ?? Array.Empty<string>();
             Port = port;
             InitializationTimeout = initializationTimeout;
             EnvironmentForProcess = environmentForProcess;
             SharedHttpClient = CreateHttpClientInstance();
+        }
+
+        internal AppiumLocalService(
+            FileInfo nodeJS,
+            string arguments,
+            IPAddress ip,
+            int port,
+            TimeSpan initializationTimeout,
+            IDictionary<string, string> environmentForProcess)
+            : this(nodeJS, string.IsNullOrWhiteSpace(arguments) ? Array.Empty<string>() : (IReadOnlyList<string>)arguments.Split(' ').ToList().AsReadOnly(), ip, port, initializationTimeout, environmentForProcess)
+        {
+        }
+
+        private static readonly System.Reflection.PropertyInfo ArgumentListProperty = typeof(ProcessStartInfo).GetProperty("ArgumentList");
+
+        private static void PopulateArgumentList(ProcessStartInfo startInfo, IEnumerable<string> arguments)
+        {
+            if (ArgumentListProperty != null)
+            {
+                var list = ArgumentListProperty.GetValue(startInfo) as System.Collections.IList;
+                if (list != null)
+                {
+                    foreach (var arg in arguments)
+                    {
+                        list.Add(arg);
+                    }
+                    return;
+                }
+            }
+
+            startInfo.Arguments = FormatArgumentsForCommandLine(arguments);
+        }
+
+        private static string FormatArgumentsForCommandLine(IEnumerable<string> arguments)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var arg in arguments)
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(' ');
+                }
+                sb.Append(EscapeArgument(arg));
+            }
+            return sb.ToString();
+        }
+
+        private static string EscapeArgument(string arg)
+        {
+            if (string.IsNullOrEmpty(arg))
+            {
+                return "\"\"";
+            }
+
+            if (arg.IndexOfAny(new[] { ' ', '\t', '"' }) < 0)
+            {
+                return arg;
+            }
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append('"');
+            for (int i = 0; i < arg.Length; i++)
+            {
+                int backslashCount = 0;
+                while (i < arg.Length && arg[i] == '\\')
+                {
+                    backslashCount++;
+                    i++;
+                }
+
+                if (i == arg.Length)
+                {
+                    sb.Append('\\', backslashCount * 2);
+                    break;
+                }
+
+                if (arg[i] == '"')
+                {
+                    sb.Append('\\', backslashCount * 2 + 1);
+                    sb.Append('"');
+                }
+                else
+                {
+                    sb.Append('\\', backslashCount);
+                    sb.Append(arg[i]);
+                }
+            }
+            sb.Append('"');
+            return sb.ToString();
         }
 
         private static HttpClient CreateHttpClientInstance()
@@ -107,9 +197,13 @@ namespace OpenQA.Selenium.Appium.Service
 
             Service = new Process();
             Service.StartInfo.FileName = NodeJS.FullName;
-            Service.StartInfo.Arguments = Arguments;
             Service.StartInfo.UseShellExecute = false;
             Service.StartInfo.CreateNoWindow = true;
+
+            if (ArgsList != null)
+            {
+                PopulateArgumentList(Service.StartInfo, ArgsList);
+            }
 
             if (EnvironmentForProcess != null)
             {
@@ -193,14 +287,22 @@ namespace OpenQA.Selenium.Appium.Service
             int shutdownTimeout = 5000;
             const int bufferMs = 1000;
 
-            if (ArgsList == null)
-                GenerateArgsList();
-
-            int idx = ArgsList.IndexOf("--shutdown-timeout");
-            if (idx >= 0 && idx + 1 < ArgsList.Count)
+            if (ArgsList != null)
             {
-                if (int.TryParse(ArgsList[idx + 1], out int parsed))
-                    shutdownTimeout = parsed;
+                int idx = -1;
+                for (int i = 0; i < ArgsList.Count; i++)
+                {
+                    if (ArgsList[i] == "--shutdown-timeout")
+                    {
+                        idx = i;
+                        break;
+                    }
+                }
+                if (idx >= 0 && idx + 1 < ArgsList.Count)
+                {
+                    if (int.TryParse(ArgsList[idx + 1], out int parsed))
+                        shutdownTimeout = parsed;
+                }
             }
 
             return shutdownTimeout + bufferMs;
@@ -282,37 +384,42 @@ namespace OpenQA.Selenium.Appium.Service
 
         private string GetArgsValue(string argStr)
         {
-            int idx;
-            idx = ArgsList.IndexOf(argStr);
-            return ArgsList[idx + 1];
+            if (ArgsList != null)
+            {
+                for (int i = 0; i < ArgsList.Count; i++)
+                {
+                    if (ArgsList[i] == argStr && i + 1 < ArgsList.Count)
+                    {
+                        return ArgsList[i + 1];
+                    }
+                }
+            }
+            return null;
         }
 
         private string ParseBasePath()
         {
-            if (ArgsList.Contains("--base-path"))
+            if (ArgsList != null)
             {
-                return GetArgsValue("--base-path");
-            }
-            else if (ArgsList.Contains("-pa"))
-            {
-                return GetArgsValue("-pa");
+                for (int i = 0; i < ArgsList.Count; i++)
+                {
+                    if (ArgsList[i] == "--base-path" || ArgsList[i] == "-pa")
+                    {
+                        if (i + 1 < ArgsList.Count)
+                        {
+                            return ArgsList[i + 1];
+                        }
+                    }
+                }
             }
             return AppiumServiceConstants.DefaultBasePath;
         }
 
-        private void GenerateArgsList()
-        {
-            ArgsList = Arguments.Split(' ').ToList();
-        }
         private Uri CreateStatusUrl()
         {
             Uri status;
             Uri service = ServiceUrl;
 
-            if (ArgsList == null)
-            {
-                GenerateArgsList();
-            }
             string basePath = ParseBasePath();
             bool defBasePath = basePath.Equals(AppiumServiceConstants.DefaultBasePath);
 
