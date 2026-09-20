@@ -14,6 +14,7 @@
 
 using Appium.Net.Integration.Tests.helpers;
 using NUnit.Framework;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Appium.Android;
 using OpenQA.Selenium.Appium;
 using OpenQA.Selenium.Support.UI;
@@ -79,6 +80,65 @@ namespace Appium.Net.Integration.Tests.Android
             }
         }
 
+        private (int Count, Point Location) GetElementCoordinatesWithRetry(int index, int minimumCount)
+        {
+            var previousWait = _driver.Manage().Timeouts().ImplicitWait;
+            _driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                var wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(10));
+                return wait.Until(d =>
+                {
+                    try
+                    {
+                        var currentEls = ((AndroidDriver)d).FindElements(MobileBy.ClassName("android.widget.TextView"));
+                        if (currentEls.Count <= index || currentEls.Count < minimumCount)
+                        {
+                            return default((int, Point)?);
+                        }
+                        var el = currentEls[index];
+                        var rect = el.Rect;
+                        var pt = new Point(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
+                        return (currentEls.Count, pt);
+                    }
+                    catch (StaleElementReferenceException)
+                    {
+                        return default((int, Point)?);
+                    }
+                }).Value;
+            }
+            finally
+            {
+                _driver.Manage().Timeouts().ImplicitWait = previousWait;
+            }
+        }
+
+        private IList<AppiumElement> WaitForTextViewElementsCountChange(int originalCount)
+        {
+            var previousWait = _driver.Manage().Timeouts().ImplicitWait;
+            _driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            try
+            {
+                var wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(10));
+                return wait.Until(d =>
+                {
+                    try
+                    {
+                        var currentEls = ((AndroidDriver)d).FindElements(MobileBy.ClassName("android.widget.TextView"));
+                        return currentEls.Count != originalCount ? currentEls : null;
+                    }
+                    catch (StaleElementReferenceException)
+                    {
+                        return null;
+                    }
+                });
+            }
+            finally
+            {
+                _driver.Manage().Timeouts().ImplicitWait = previousWait;
+            }
+        }
+
         [OneTimeTearDown]
         public void AfterAll()
         {
@@ -92,18 +152,12 @@ namespace Appium.Net.Integration.Tests.Android
         [Test]
         public void SimpleTouchActionTestCase()
         {
-            IList<AppiumElement> els = WaitForTextViewElements(3);
-
-            var number1 = els.Count;
-            var elementToTouch = els[2];
-            var rect = elementToTouch.Rect;
-            var x = rect.X + rect.Width / 2;
-            var y = rect.Y + rect.Height / 2;
+            var (number1, point) = GetElementCoordinatesWithRetry(2, 3);
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
 
-            var move = touch.CreatePointerMove(CoordinateOrigin.Viewport, x, y, TimeSpan.FromSeconds(1));
+            var move = touch.CreatePointerMove(CoordinateOrigin.Viewport, point.X, point.Y, TimeSpan.FromSeconds(1));
             var actionPress = touch.CreatePointerDown(PointerButton.TouchContact);
             var pause = touch.CreatePause(TimeSpan.FromMilliseconds(250));
             var actionRelease = touch.CreatePointerUp(PointerButton.TouchContact);
@@ -120,21 +174,7 @@ namespace Appium.Net.Integration.Tests.Android
 
             _driver.PerformActions(actions_seq);
 
-            var previousImplicitWait = _driver.Manage().Timeouts().ImplicitWait;
-            _driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            try
-            {
-                WebDriverWait wait = new WebDriverWait(_driver, previousImplicitWait.TotalSeconds > 0 ? previousImplicitWait : TimeSpan.FromSeconds(10));
-                els = wait.Until(d =>
-                {
-                    var currentEls = ((AndroidDriver)d).FindElements(MobileBy.ClassName("android.widget.TextView"));
-                    return currentEls.Count != number1 ? currentEls : null;
-                });
-            }
-            finally
-            {
-                _driver.Manage().Timeouts().ImplicitWait = previousImplicitWait;
-            }
+            var els = WaitForTextViewElementsCountChange(number1);
 
             Assert.That(els, Has.Count.Not.EqualTo(number1));
         }
@@ -142,18 +182,10 @@ namespace Appium.Net.Integration.Tests.Android
         [Test]
         public void TouchByCoordinatesTestCase()
         {
-            IList<AppiumElement> els = WaitForTextViewElements(3);
-            var number1 = els.Count;
-            var elementToTouch = els[2];
+            var (number1, point) = GetElementCoordinatesWithRetry(2, 3);
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
-
-            Point point = new()
-            {
-                X = (elementToTouch.Rect.X+elementToTouch.Rect.Width)/2,
-                Y = elementToTouch.Rect.Y
-            };
 
             Interaction move = touch.CreatePointerMove(CoordinateOrigin.Viewport, point.X, point.Y, TimeSpan.Zero);
             Interaction actionPress = touch.CreatePointerDown(PointerButton.TouchContact);
@@ -169,8 +201,8 @@ namespace Appium.Net.Integration.Tests.Android
             };
 
             _driver.PerformActions(actions_seq);
-            Thread.Sleep(1000);
-            els = _driver.FindElements(MobileBy.ClassName("android.widget.TextView"));
+
+            var els = WaitForTextViewElementsCountChange(number1);
 
             Assert.That(els, Has.Count.Not.EqualTo(number1));
         }
