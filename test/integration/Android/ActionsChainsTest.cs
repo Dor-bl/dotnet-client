@@ -80,7 +80,13 @@ namespace Appium.Net.Integration.Tests.Android
             }
         }
 
-        private (int Count, Point Location) GetElementCoordinatesWithRetry(int index, int minimumCount)
+        private class ElementCoordinates
+        {
+            public int Count { get; set; }
+            public Point Location { get; set; }
+        }
+
+        private ElementCoordinates GetElementCoordinatesWithRetry(int index, int minimumCount)
         {
             var previousWait = _driver.Manage().Timeouts().ImplicitWait;
             _driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
@@ -94,18 +100,18 @@ namespace Appium.Net.Integration.Tests.Android
                         var currentEls = ((AndroidDriver)d).FindElements(MobileBy.ClassName("android.widget.TextView"));
                         if (currentEls.Count <= index || currentEls.Count < minimumCount)
                         {
-                            return default((int, Point)?);
+                            return null;
                         }
                         var el = currentEls[index];
                         var rect = el.Rect;
                         var pt = new Point(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
-                        return (currentEls.Count, pt);
+                        return new ElementCoordinates { Count = currentEls.Count, Location = pt };
                     }
                     catch (StaleElementReferenceException)
                     {
-                        return default((int, Point)?);
+                        return null;
                     }
-                }).Value;
+                });
             }
             finally
             {
@@ -152,7 +158,9 @@ namespace Appium.Net.Integration.Tests.Android
         [Test]
         public void SimpleTouchActionTestCase()
         {
-            var (number1, point) = GetElementCoordinatesWithRetry(2, 3);
+            var target = GetElementCoordinatesWithRetry(2, 3);
+            var number1 = target.Count;
+            var point = target.Location;
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
@@ -182,7 +190,9 @@ namespace Appium.Net.Integration.Tests.Android
         [Test]
         public void TouchByCoordinatesTestCase()
         {
-            var (number1, point) = GetElementCoordinatesWithRetry(2, 3);
+            var target = GetElementCoordinatesWithRetry(2, 3);
+            var number1 = target.Count;
+            var point = target.Location;
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
