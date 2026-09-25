@@ -37,8 +37,12 @@ namespace Appium.Net.Integration.Tests.Android.Device.Keys
             StartCustomTitleActivity();
             var text_edit_btn = By.Id("io.appium.android.apis:id/left_text_edit");
             _driver.FindElement(text_edit_btn).Clear();
-            _driver.FindElement(text_edit_btn).Click();
-            _driver.HideKeyboard();
+            _driver.FindElement(text_edit_btn).SendKeys("a");
+            if (_driver.IsKeyboardShown())
+            {
+                _driver.HideKeyboard();
+            }
+            Assert.That(!_driver.IsKeyboardShown());
         }
 
         [Test]
