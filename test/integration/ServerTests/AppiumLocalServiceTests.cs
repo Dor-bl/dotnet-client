@@ -93,8 +93,7 @@ namespace Appium.Net.Integration.Tests.ServerTests
                 new object[]
                 {
                     new System.IO.FileInfo("node"),
-                    Array.Empty<string>(),
-                    Array.Empty<string>(),
+                    "",
                     System.Net.IPAddress.Loopback,
                     4723,
                     TimeSpan.FromSeconds(5),
@@ -181,6 +180,104 @@ namespace Appium.Net.Integration.Tests.ServerTests
             // Use reflection to access the private 'Service' field
             var field = typeof(AppiumLocalService).GetField("Service", BindingFlags.Instance | BindingFlags.NonPublic);
             return (Process)field.GetValue(service);
+        }
+
+        [Test]
+        public void BuildArguments_ConstructsUnquotedArgumentList()
+        {
+            var dummyJs = new FileInfo(Path.GetTempFileName());
+            try
+            {
+                var builder = new AppiumServiceBuilder()
+                    .WithAppiumJS(dummyJs)
+                    .WithIPAddress("127.0.0.1")
+                    .UsingPort(4723);
+
+                var buildArgsMethod = typeof(AppiumServiceBuilder).GetMethod("BuildArguments", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(buildArgsMethod, Is.Not.Null, "BuildArguments method should exist.");
+
+                var args = buildArgsMethod.Invoke(builder, null) as System.Collections.Generic.IReadOnlyList<string>;
+                Assert.That(args, Is.Not.Null);
+
+                Assert.That(args, Contains.Item(dummyJs.FullName));
+                Assert.That(args, Contains.Item("--port"));
+                Assert.That(args, Contains.Item("4723"));
+                Assert.That(args, Contains.Item("--address"));
+                Assert.That(args, Contains.Item("127.0.0.1"));
+            }
+            finally
+            {
+                if (dummyJs.Exists)
+                {
+                    dummyJs.Delete();
+                }
+            }
+        }
+
+        [Test]
+        public void PopulateArgumentList_SafelyPopulatesArgumentsWithSpecialCharacters()
+        {
+            var populateMethod = typeof(AppiumLocalService).GetMethod(
+                "PopulateArgumentList",
+                BindingFlags.Static | BindingFlags.NonPublic
+            );
+            Assert.That(populateMethod, Is.Not.Null, "PopulateArgumentList method should exist.");
+
+            var startInfo = new ProcessStartInfo();
+            var testArgs = new[]
+            {
+                "path/to/main.js",
+                "--port",
+                "4723",
+                "--log",
+                "C:\\Program Files\\Appium\\log file.txt",
+                "\"--injection-attempt&calc.exe\""
+            };
+
+            populateMethod.Invoke(null, new object[] { startInfo, testArgs });
+
+            var argListProp = typeof(ProcessStartInfo).GetProperty("ArgumentList");
+            if (argListProp != null)
+            {
+                var argList = argListProp.GetValue(startInfo) as System.Collections.IList;
+                Assert.That(argList, Is.Not.Null);
+                Assert.That(argList.Count, Is.EqualTo(testArgs.Length));
+                for (int i = 0; i < testArgs.Length; i++)
+                {
+                    Assert.That(argList[i], Is.EqualTo(testArgs[i]));
+                }
+            }
+            else
+            {
+                Assert.That(startInfo.Arguments, Does.Contain("4723"));
+                Assert.That(startInfo.Arguments, Does.Contain("\"C:\\Program Files\\Appium\\log file.txt\""));
+            }
+        }
+
+        [Test]
+        public void OptionCollector_SerializesCapabilitiesAsValidJson()
+        {
+            var options = new OpenQA.Selenium.Appium.AppiumOptions
+            {
+                App = "C:\\test\\app.apk"
+            };
+            options.AddAdditionalAppiumOption("platformName", "Android");
+
+            var collector = new OptionCollector().AddCapabilities(options);
+
+            var argsProperty = typeof(OptionCollector).GetProperty("Arguments", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(argsProperty, Is.Not.Null);
+
+            var args = argsProperty.GetValue(collector) as System.Collections.Generic.IList<string>;
+            Assert.That(args, Is.Not.Null);
+
+            int capsIndex = args.IndexOf("--default-capabilities");
+            Assert.That(capsIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(args.Count, Is.GreaterThan(capsIndex + 1));
+
+            string jsonCaps = args[capsIndex + 1];
+            Assert.That(jsonCaps.StartsWith("{") && jsonCaps.EndsWith("}"), Is.True, "Capabilities should be valid JSON object string without outer quotes.");
+            Assert.That(jsonCaps, Does.Contain("\"appium:platformName\":\"Android\""));
         }
     }
 }

@@ -445,6 +445,8 @@ namespace OpenQA.Selenium.Appium.Service
             List<string> argList = new List<string>();
             CheckAppiumJS();
 
+            argList.AddRange(NodeOptions);
+
             argList.Add(AppiumJS.FullName);
             argList.Add("--port");
             argList.Add(Port.ToString());
@@ -473,8 +475,7 @@ namespace OpenQA.Selenium.Appium.Service
         public AppiumLocalService Build()
         {
             NodeJS ??= DefaultExecutable;
-            // Node options stay raw: WithNodeArguments documents that callers escape them.
-            return new AppiumLocalService(NodeJS, NodeOptions, BuildArguments(), IPAddress.Parse(IpAddress), Port, StartUpTimeout, EnvironmentForAProcess);
+            return new AppiumLocalService(NodeJS, BuildArguments(), IPAddress.Parse(IpAddress), Port, StartUpTimeout, EnvironmentForAProcess);
         }
     }
 }

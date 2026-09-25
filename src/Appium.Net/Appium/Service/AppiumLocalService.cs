@@ -32,7 +32,6 @@ namespace OpenQA.Selenium.Appium.Service
     public class AppiumLocalService : IDisposable
     {
         private readonly FileInfo NodeJS;
-        private readonly IReadOnlyList<string> NodeArgsList;
         private readonly IReadOnlyList<string> ArgsList;
         private readonly IPAddress IP;
         private readonly int Port;
@@ -41,7 +40,7 @@ namespace OpenQA.Selenium.Appium.Service
         private readonly HttpClient SharedHttpClient;
         private Process Service;
 
-        private string Arguments => BuildCommandLine(NodeArgsList, ArgsList);
+        private string Arguments => string.Join(" ", ArgsList ?? Array.Empty<string>());
 
         /// <summary>
         /// Creates an instance of AppiumLocalService without special settings
@@ -49,18 +48,8 @@ namespace OpenQA.Selenium.Appium.Service
         /// <returns>An instance of AppiumLocalService without special settings</returns>
         public static AppiumLocalService BuildDefaultService() => new AppiumServiceBuilder().Build();
 
-        /// <param name="nodeJS">The Node.js executable.</param>
-        /// <param name="nodeArgsList">Raw Node.js arguments. They are passed to the command line as-is,
-        /// so callers stay responsible for escaping them (see AppiumServiceBuilder.WithNodeArguments).</param>
-        /// <param name="argsList">Appium server arguments. Each item is escaped so it reaches Node.js
-        /// as exactly one argument.</param>
-        /// <param name="ip">The server IP address.</param>
-        /// <param name="port">The server port.</param>
-        /// <param name="initializationTimeout">The server startup timeout.</param>
-        /// <param name="environmentForProcess">Environment variables for the server process.</param>
         internal AppiumLocalService(
             FileInfo nodeJS,
-            IReadOnlyList<string> nodeArgsList,
             IReadOnlyList<string> argsList,
             IPAddress ip,
             int port,
@@ -69,7 +58,6 @@ namespace OpenQA.Selenium.Appium.Service
         {
             NodeJS = nodeJS;
             IP = ip;
-            NodeArgsList = nodeArgsList ?? Array.Empty<string>();
             ArgsList = argsList ?? Array.Empty<string>();
             Port = port;
             InitializationTimeout = initializationTimeout;
@@ -77,25 +65,59 @@ namespace OpenQA.Selenium.Appium.Service
             SharedHttpClient = CreateHttpClientInstance();
         }
 
-        /// <summary>
-        /// Builds the Node.js command line. Raw arguments are appended verbatim to keep the documented
-        /// WithNodeArguments contract; every other argument is escaped. .NET splits
-        /// ProcessStartInfo.Arguments with the same rules on Windows, Linux and macOS, so each escaped
-        /// argument reaches the process as exactly one argument on every platform.
-        /// </summary>
-        internal static string BuildCommandLine(IEnumerable<string> rawArguments, IEnumerable<string> arguments)
+        internal AppiumLocalService(
+            FileInfo nodeJS,
+            string arguments,
+            IPAddress ip,
+            int port,
+            TimeSpan initializationTimeout,
+            IDictionary<string, string> environmentForProcess)
+            : this(nodeJS, string.IsNullOrWhiteSpace(arguments) ? Array.Empty<string>() : (IReadOnlyList<string>)arguments.Split(' ').ToList().AsReadOnly(), ip, port, initializationTimeout, environmentForProcess)
         {
-            return string.Join(" ", rawArguments.Concat(arguments.Select(EscapeArgument)));
         }
 
-        internal static string EscapeArgument(string arg)
+        private static readonly System.Reflection.PropertyInfo ArgumentListProperty = typeof(ProcessStartInfo).GetProperty("ArgumentList");
+
+        private static void PopulateArgumentList(ProcessStartInfo startInfo, IEnumerable<string> arguments)
+        {
+            if (ArgumentListProperty != null)
+            {
+                var list = ArgumentListProperty.GetValue(startInfo) as System.Collections.IList;
+                if (list != null)
+                {
+                    foreach (var arg in arguments)
+                    {
+                        list.Add(arg);
+                    }
+                    return;
+                }
+            }
+
+            startInfo.Arguments = FormatArgumentsForCommandLine(arguments);
+        }
+
+        private static string FormatArgumentsForCommandLine(IEnumerable<string> arguments)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var arg in arguments)
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(' ');
+                }
+                sb.Append(EscapeArgument(arg));
+            }
+            return sb.ToString();
+        }
+
+        private static string EscapeArgument(string arg)
         {
             if (string.IsNullOrEmpty(arg))
             {
                 return "\"\"";
             }
 
-            if (arg.IndexOfAny(new[] { ' ', '\t', '\n', '\v', '"' }) < 0)
+            if (arg.IndexOfAny(new[] { ' ', '\t', '"' }) < 0)
             {
                 return arg;
             }
@@ -178,7 +200,10 @@ namespace OpenQA.Selenium.Appium.Service
             Service.StartInfo.UseShellExecute = false;
             Service.StartInfo.CreateNoWindow = true;
 
-            Service.StartInfo.Arguments = Arguments;
+            if (ArgsList != null)
+            {
+                PopulateArgumentList(Service.StartInfo, ArgsList);
+            }
 
             if (EnvironmentForProcess != null)
             {
