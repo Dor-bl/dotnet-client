@@ -32,6 +32,19 @@ namespace Appium.Net.Integration.Tests.ImageComparison
         }
 
         [Test]
+        [SetCulture("de-DE")]
+        public void Score_WithStringObjectUnderCommaDecimalCulture_ReturnsCorrectDouble()
+        {
+            var resultDict = new Dictionary<string, object>
+            {
+                { "score", "0.75" }
+            };
+            var similarityResult = new SimilarityMatchingResult(resultDict);
+
+            Assert.That(similarityResult.Score, Is.EqualTo(0.75d));
+        }
+
+        [Test]
         public void Score_WithIntegerObject_ReturnsCorrectDouble()
         {
             var resultDict = new Dictionary<string, object>
