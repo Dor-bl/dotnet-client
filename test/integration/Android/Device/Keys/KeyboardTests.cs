@@ -38,17 +38,7 @@ namespace Appium.Net.Integration.Tests.Android.Device.Keys
             var text_edit_btn = By.Id("io.appium.android.apis:id/left_text_edit");
             _driver.FindElement(text_edit_btn).Clear();
             _driver.FindElement(text_edit_btn).Click();
-            try
-            {
-                if (_driver.IsKeyboardShown())
-                {
-                    _driver.HideKeyboard();
-                }
-            }
-            catch (WebDriverException ex) when (ex.Message.Contains("cannot be hidden"))
-            {
-                // Soft keyboard may not be hideable via default strategy on certain Android API levels/emulators
-            }
+            _driver.HideKeyboard();
         }
 
         [Test]
