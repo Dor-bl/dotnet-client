@@ -98,9 +98,19 @@ namespace Appium.Net.Integration.Tests.IOS
         [OneTimeTearDown]
         public void TearDown()
         {
-            if (_driver.IsLocked())
-                _driver.Unlock();
-            _driver?.Quit();
+            if (_driver != null)
+            {
+                try
+                {
+                    if (_driver.IsLocked())
+                        _driver.Unlock();
+                }
+                catch (System.Exception)
+                {
+                    // Ignore exception during teardown unlock check
+                }
+                _driver.Quit();
+            }
 
             if (!Env.ServerIsRemote())
             {
