@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -304,9 +305,9 @@ namespace OpenQA.Selenium.Appium
                 var locationValues = commandResponse.Value as Dictionary<string, object>;
                 return new Location
                 {
-                    Altitude = Convert.ToDouble(locationValues["altitude"]),
-                    Latitude = Convert.ToDouble(locationValues["latitude"]),
-                    Longitude = Convert.ToDouble(locationValues["longitude"])
+                    Altitude = Convert.ToDouble(locationValues["altitude"], CultureInfo.InvariantCulture),
+                    Latitude = Convert.ToDouble(locationValues["latitude"], CultureInfo.InvariantCulture),
+                    Longitude = Convert.ToDouble(locationValues["longitude"], CultureInfo.InvariantCulture)
                 };
             }
             set
