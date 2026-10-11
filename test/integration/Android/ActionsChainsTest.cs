@@ -14,6 +14,7 @@
 
 using Appium.Net.Integration.Tests.helpers;
 using NUnit.Framework;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Appium.Android;
 using OpenQA.Selenium.Appium;
 using OpenQA.Selenium.Support.UI;
@@ -139,17 +140,33 @@ namespace Appium.Net.Integration.Tests.Android
         [Test]
         public void TouchByCoordinatesTestCase()
         {
-            IList<AppiumElement> els = WaitForTextViewElements(3);
-            var number1 = els.Count;
-            var elementToTouch = els[2];
+            var previousImplicitWait = _driver.Manage().Timeouts().ImplicitWait;
+            _driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
+            Rectangle rect;
+            int number1;
+            try
+            {
+                WebDriverWait wait = new WebDriverWait(_driver, previousImplicitWait.TotalSeconds > 0 ? previousImplicitWait : TimeSpan.FromSeconds(10));
+                wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException), typeof(NoSuchElementException));
+                var result = wait.Until<(int Count, Rectangle Rect)?>(d =>
+                {
+                    var currentEls = ((AndroidDriver)d).FindElements(MobileBy.ClassName("android.widget.TextView"));
+                    return currentEls.Count >= 3 ? (currentEls.Count, currentEls[2].Rect) : null;
+                });
+                (number1, rect) = result!.Value;
+            }
+            finally
+            {
+                _driver.Manage().Timeouts().ImplicitWait = previousImplicitWait;
+            }
 
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
 
             Point point = new()
             {
-                X = (elementToTouch.Rect.X+elementToTouch.Rect.Width)/2,
-                Y = elementToTouch.Rect.Y
+                X = (rect.X + rect.Width) / 2,
+                Y = rect.Y
             };
 
             Interaction move = touch.CreatePointerMove(CoordinateOrigin.Viewport, point.X, point.Y, TimeSpan.Zero);
@@ -167,7 +184,7 @@ namespace Appium.Net.Integration.Tests.Android
 
             _driver.PerformActions(actions_seq);
             Thread.Sleep(1000);
-            els = _driver.FindElements(MobileBy.ClassName("android.widget.TextView"));
+            var els = _driver.FindElements(MobileBy.ClassName("android.widget.TextView"));
 
             Assert.That(els, Has.Count.Not.EqualTo(number1));
         }
