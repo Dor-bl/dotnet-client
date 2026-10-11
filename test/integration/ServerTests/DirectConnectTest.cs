@@ -100,5 +100,22 @@ namespace Appium.Net.Integration.Tests.ServerTests
             Assert.That(directConnect.GetUri(), Is.Null);
         }
 
+        [Test]
+        public void WithInvalidHostReturnsNullWhenUriFormatExceptionOccurs()
+        {
+            var body = new Dictionary<string, object>
+            {
+                ["appium:directConnectProtocol"] = "https",
+                ["appium:directConnectHost"] = "[invalid host]",
+                ["appium:directConnectPort"] = "9090",
+                ["appium:directConnectPath"] = "/path/to/new/direction"
+            };
+
+            var response = new Response(null, body, WebDriverResult.Success);
+
+            var directConnect = new DirectConnect(response);
+            Assert.That(directConnect.GetUri(), Is.Null);
+        }
+
     }
 }
