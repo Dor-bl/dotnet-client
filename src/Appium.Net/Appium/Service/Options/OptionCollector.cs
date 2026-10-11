@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.Json;
 
 namespace OpenQA.Selenium.Appium.Service.Options
@@ -62,51 +63,50 @@ namespace OpenQA.Selenium.Appium.Service.Options
 
         private string ParseCapabilitiesIfWindows(IDictionary<string, object> capabilitiesDictionary)
         {
-            string result = string.Empty;
-
-            if (capabilitiesDictionary != null)
+            if (capabilitiesDictionary == null)
             {
-                foreach (var item in capabilitiesDictionary)
-                {
-                    object value = item.Value;
-
-                    if (value == null)
-                    {
-                        continue;
-                    }
-
-                    if (typeof(string).IsAssignableFrom(value.GetType()))
-                    {
-                        if (AppiumServiceConstants.FilePathCapabilitiesForWindows.Contains(item.Key))
-                        {
-                            value = $"\\\"{Convert.ToString(value).Replace("\\", "/")}\\\"";
-                        }
-                        else
-                        {
-                            value = $"\\\"{value}\\\"";
-                        }
-                    }
-                    else
-                    {
-                        if (typeof(bool).IsAssignableFrom(value.GetType()))
-                        {
-                            value = Convert.ToString(value).ToLowerInvariant();
-                        }
-                    }
-
-                    string key = $"\\\"{item.Key}\\\"";
-                    if (string.IsNullOrEmpty(result))
-                    {
-                        result = $"{key}: {value}";
-                    }
-                    else
-                    {
-                        result = result + ", " + key + ": " + value;
-                    }
-                }
+                return "\"{}\"";
             }
 
-            return "\"{" + result + "}\"";
+            var builder = new StringBuilder();
+
+            foreach (var item in capabilitiesDictionary)
+            {
+                object value = item.Value;
+
+                if (value == null)
+                {
+                    continue;
+                }
+
+                if (typeof(string).IsAssignableFrom(value.GetType()))
+                {
+                    if (AppiumServiceConstants.FilePathCapabilitiesForWindows.Contains(item.Key))
+                    {
+                        value = $"\\\"{Convert.ToString(value).Replace("\\", "/")}\\\"";
+                    }
+                    else
+                    {
+                        value = $"\\\"{value}\\\"";
+                    }
+                }
+                else
+                {
+                    if (typeof(bool).IsAssignableFrom(value.GetType()))
+                    {
+                        value = Convert.ToString(value).ToLowerInvariant();
+                    }
+                }
+
+                string key = $"\\\"{item.Key}\\\"";
+                if (builder.Length > 0)
+                {
+                    builder.Append(", ");
+                }
+                builder.Append(key).Append(": ").Append(value);
+            }
+
+            return "\"{" + builder.ToString() + "}\"";
         }
 
         private string ParseCapabilitiesIfUNIX(IDictionary<string, object> capabilitiesDictionary)
