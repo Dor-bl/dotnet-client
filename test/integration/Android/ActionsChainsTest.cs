@@ -36,6 +36,12 @@ namespace Appium.Net.Integration.Tests.Android
     [Category("Drawing")]
     internal class ActionsChainsTest
     {
+        private class ElementTouchDetails
+        {
+            public int Count { get; set; }
+            public Point Point { get; set; }
+        }
+
         private AndroidDriver _driver;
 
         [OneTimeSetUp]
@@ -142,18 +148,26 @@ namespace Appium.Net.Integration.Tests.Android
         {
             var previousImplicitWait = _driver.Manage().Timeouts().ImplicitWait;
             _driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-            Rectangle rect;
-            int number1;
+            ElementTouchDetails details;
             try
             {
                 WebDriverWait wait = new WebDriverWait(_driver, previousImplicitWait.TotalSeconds > 0 ? previousImplicitWait : TimeSpan.FromSeconds(10));
                 wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException), typeof(NoSuchElementException));
-                var result = wait.Until<(int Count, Rectangle Rect)?>(d =>
+                details = wait.Until(d =>
                 {
                     var currentEls = ((AndroidDriver)d).FindElements(MobileBy.ClassName("android.widget.TextView"));
-                    return currentEls.Count >= 3 ? (currentEls.Count, currentEls[2].Rect) : null;
+                    if (currentEls.Count < 3)
+                    {
+                        return null;
+                    }
+                    var elementToTouch = currentEls[2];
+                    var r = elementToTouch.Rect;
+                    return new ElementTouchDetails
+                    {
+                        Count = currentEls.Count,
+                        Point = new Point((r.X + r.Width) / 2, r.Y)
+                    };
                 });
-                (number1, rect) = result!.Value;
             }
             finally
             {
@@ -163,13 +177,7 @@ namespace Appium.Net.Integration.Tests.Android
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
 
-            Point point = new()
-            {
-                X = (rect.X + rect.Width) / 2,
-                Y = rect.Y
-            };
-
-            Interaction move = touch.CreatePointerMove(CoordinateOrigin.Viewport, point.X, point.Y, TimeSpan.Zero);
+            Interaction move = touch.CreatePointerMove(CoordinateOrigin.Viewport, details.Point.X, details.Point.Y, TimeSpan.Zero);
             Interaction actionPress = touch.CreatePointerDown(PointerButton.TouchContact);
             Interaction actionRelease = touch.CreatePointerUp(PointerButton.TouchContact);
 
@@ -186,7 +194,7 @@ namespace Appium.Net.Integration.Tests.Android
             Thread.Sleep(1000);
             var els = _driver.FindElements(MobileBy.ClassName("android.widget.TextView"));
 
-            Assert.That(els, Has.Count.Not.EqualTo(number1));
+            Assert.That(els, Has.Count.Not.EqualTo(details.Count));
         }
 
         [Test]
