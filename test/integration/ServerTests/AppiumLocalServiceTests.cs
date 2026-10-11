@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using OpenQA.Selenium.Appium.Service;
+using OpenQA.Selenium.Appium.Service.Exceptions;
 using OpenQA.Selenium.Appium.Service.Options;
 
 namespace Appium.Net.Integration.Tests.ServerTests
@@ -180,6 +181,38 @@ namespace Appium.Net.Integration.Tests.ServerTests
             // Use reflection to access the private 'Service' field
             var field = typeof(AppiumLocalService).GetField("Service", BindingFlags.Instance | BindingFlags.NonPublic);
             return (Process)field.GetValue(service);
+        }
+
+        [Test]
+        public void Start_ThrowsAppiumServerHasNotBeenStartedLocallyException_WhenNodeExecutableDoesNotExist()
+        {
+            var nonExistentNodePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + "_nonexistent_node_exec");
+            var service = (AppiumLocalService)Activator.CreateInstance(
+                typeof(AppiumLocalService),
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null,
+                new object[]
+                {
+                    new FileInfo(nonExistentNodePath),
+                    "",
+                    System.Net.IPAddress.Loopback,
+                    4723,
+                    TimeSpan.FromSeconds(5),
+                    null
+                },
+                null
+            );
+
+            try
+            {
+                var ex = Assert.Throws<AppiumServerHasNotBeenStartedLocallyException>(() => service.Start());
+                Assert.That(ex.InnerException, Is.Not.Null);
+                Assert.That(ex.Message, Does.Contain(nonExistentNodePath));
+            }
+            finally
+            {
+                service.Dispose();
+            }
         }
     }
 }
