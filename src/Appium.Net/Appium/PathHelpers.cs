@@ -19,6 +19,8 @@ namespace OpenQA.Selenium.Appium
             "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
         };
 
+        private static readonly HashSet<char> InvalidFileNameCharsSet = new HashSet<char>(Path.GetInvalidFileNameChars());
+
         public static string ValidateAndGetFullPath(string fileName)
         {
             if (fileName is null)
@@ -36,7 +38,6 @@ namespace OpenQA.Selenium.Appium
                 throw new ArgumentException("The file name contains invalid characters.", nameof(fileName));
             }
 
-            var invalidFileNameChars = Path.GetInvalidFileNameChars();
             var separators = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
             string[] parts = fileName.Split(separators, StringSplitOptions.RemoveEmptyEntries);
 
@@ -55,7 +56,7 @@ namespace OpenQA.Selenium.Appium
 
                 foreach (char c in part)
                 {
-                    if (Array.IndexOf(invalidFileNameChars, c) >= 0)
+                    if (InvalidFileNameCharsSet.Contains(c))
                     {
                         if (IsWindows && c == ':' && i == 0 && part.Length == 2 && char.IsLetter(part[0]) && part[1] == ':')
                         {
