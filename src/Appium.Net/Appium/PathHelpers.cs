@@ -134,9 +134,9 @@ namespace OpenQA.Selenium.Appium
                         return true;
                     }
                 }
-                catch
+                catch (Exception)
                 {
-                    // Fall through
+                    // Fall through to reparse point attribute check if LinkTarget property access fails
                 }
             }
 
@@ -151,7 +151,7 @@ namespace OpenQA.Selenium.Appium
                     }
                 }
             }
-            catch
+            catch (Exception)
             {
                 if (FileSystemEntryExists(path))
                 {
@@ -189,7 +189,7 @@ namespace OpenQA.Selenium.Appium
 
                 return false;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
