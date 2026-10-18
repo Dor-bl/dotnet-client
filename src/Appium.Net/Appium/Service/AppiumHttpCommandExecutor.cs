@@ -14,6 +14,7 @@
 
 using OpenQA.Selenium.Remote;
 using System;
+using System.Diagnostics;
 using System.Net.Http;
 
 namespace OpenQA.Selenium.Appium.Service
@@ -28,6 +29,7 @@ namespace OpenQA.Selenium.Appium.Service
 
             if (_clientConfig != null && _clientConfig.RelaxSslValidation)
             {
+                Trace.TraceWarning("SSL validation is relaxed. This introduces security risks such as susceptibility to Man-In-The-Middle (MITM) attacks and should only be used in non-production environments.");
                 handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
             }
             return handler;
