@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security;
 
 namespace OpenQA.Selenium.Appium
 {
@@ -189,7 +190,7 @@ namespace OpenQA.Selenium.Appium
 
                 return false;
             }
-            catch
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is NotSupportedException || ex is SecurityException)
             {
                 return false;
             }
