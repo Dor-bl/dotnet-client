@@ -229,9 +229,9 @@ namespace OpenQA.Selenium.Appium.Service
                     Service.Kill();
                 }
             }
-            catch
+            catch (Exception)
             {
-                // Optionally log or handle exceptions
+                // Suppress exceptions during process termination to ensure cleanup in finally block completes
             }
             finally
             {
