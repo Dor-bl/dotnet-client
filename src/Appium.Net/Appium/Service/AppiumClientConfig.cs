@@ -38,6 +38,11 @@ namespace OpenQA.Selenium.Appium.Service
         /// </summary>
         public bool DirectConnect { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether SSL certificate validation should be bypassed.
+        /// WARNING: Bypassing SSL validation poses serious security risks (such as susceptibility to
+        /// Man-In-The-Middle attacks) and should only be enabled in non-production / testing environments.
+        /// </summary>
         public bool RelaxSslValidation { get; set; }
 
     }
