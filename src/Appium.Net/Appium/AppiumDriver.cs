@@ -458,13 +458,14 @@ namespace OpenQA.Selenium.Appium
         {
             if (actionSequenceList == null)
             {
-                throw new ArgumentNullException("actionSequenceList", "List of action sequences must not be null");
+                throw new ArgumentNullException(nameof(actionSequenceList), "List of action sequences must not be null");
             }
 
-            List<object> objectList = new List<object>();
-            foreach (ActionSequence sequence in actionSequenceList)
+            int count = actionSequenceList.Count;
+            List<object> objectList = new List<object>(count);
+            for (int i = 0; i < count; i++)
             {
-                objectList.Add(sequence.ToDictionary());
+                objectList.Add(actionSequenceList[i].ToDictionary());
             }
 
             Dictionary<string, object> parameters = new Dictionary<string, object>();
