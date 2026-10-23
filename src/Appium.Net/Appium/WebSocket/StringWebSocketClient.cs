@@ -196,7 +196,7 @@ namespace OpenQA.Selenium.Appium.WebSocket
         /// <param name="endpoint">The full address of an endpoint to connect to. Usually starts with 'ws://'.</param>
         public async Task ConnectAsync(Uri endpoint)
         {
-            await _connectionLock.WaitAsync();
+            await _connectionLock.WaitAsync().ConfigureAwait(false);
             try
             {
                 // If websocket is already open and connected to the same endpoint, return
@@ -207,7 +207,7 @@ namespace OpenQA.Selenium.Appium.WebSocket
                         return;
                     }
 
-                    await DisconnectInternalAsync();
+                    await DisconnectInternalAsync().ConfigureAwait(false);
                 }
 
                 // Recreate ClientWebSocket if it's disposed or in a non-connectable state
@@ -224,7 +224,7 @@ namespace OpenQA.Selenium.Appium.WebSocket
                     _endpoint = endpoint;
                     _cancellationTokenSource = new CancellationTokenSource();
                     
-                    await _clientWebSocket.ConnectAsync(endpoint, _cancellationTokenSource.Token);
+                    await _clientWebSocket.ConnectAsync(endpoint, _cancellationTokenSource.Token).ConfigureAwait(false);
                     
                     // Invoke connection handlers
                     _connected?.Invoke();
@@ -247,7 +247,14 @@ namespace OpenQA.Selenium.Appium.WebSocket
             }
             finally
             {
-                _connectionLock.Release();
+                try
+                {
+                    _connectionLock.Release();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Ignore if connectionLock was disposed
+                }
             }
         }
 
@@ -256,14 +263,29 @@ namespace OpenQA.Selenium.Appium.WebSocket
         /// </summary>
         public async Task DisconnectAsync()
         {
-            await _connectionLock.WaitAsync();
             try
             {
-                await DisconnectInternalAsync();
+                await _connectionLock.WaitAsync().ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException)
+            {
+                return;
+            }
+
+            try
+            {
+                await DisconnectInternalAsync().ConfigureAwait(false);
             }
             finally
             {
-                _connectionLock.Release();
+                try
+                {
+                    _connectionLock.Release();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Ignore if connectionLock was disposed
+                }
             }
         }
 
@@ -277,12 +299,12 @@ namespace OpenQA.Selenium.Appium.WebSocket
                 try
                 {
                     _cancellationTokenSource?.Cancel();
-                    await _clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
+                    await _clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None).ConfigureAwait(false);
                     
                     // Wait for receive task to complete
                     if (_receiveTask != null)
                     {
-                        await _receiveTask;
+                        await _receiveTask.ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
@@ -319,13 +341,13 @@ namespace OpenQA.Selenium.Appium.WebSocket
 
             try
             {
-                while (_clientWebSocket.State == WebSocketState.Open && !_cancellationTokenSource.Token.IsCancellationRequested)
+                while (_clientWebSocket != null && _clientWebSocket.State == WebSocketState.Open && _cancellationTokenSource != null && !_cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     WebSocketReceiveResult result;
                     
                     do
                     {
-                        result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _cancellationTokenSource.Token);
+                        result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _cancellationTokenSource.Token).ConfigureAwait(false);
                         
                         if (result.MessageType == WebSocketMessageType.Text)
                         {
@@ -333,7 +355,7 @@ namespace OpenQA.Selenium.Appium.WebSocket
                         }
                         else if (result.MessageType == WebSocketMessageType.Close)
                         {
-                            await DisconnectAsync();
+                            await DisconnectAsync().ConfigureAwait(false);
                             return;
                         }
                     }
@@ -353,10 +375,18 @@ namespace OpenQA.Selenium.Appium.WebSocket
             {
                 // Normal cancellation, ignore
             }
+            catch (ObjectDisposedException)
+            {
+                // Disposed during operation, ignore
+            }
             catch (Exception ex)
             {
-                // Invoke error handlers
-                _errorOccurred?.Invoke(ex);
+                // Invoke error handlers if cancellation was not requested
+                var cts = _cancellationTokenSource;
+                if (cts != null && !cts.IsCancellationRequested)
+                {
+                    _errorOccurred?.Invoke(ex);
+                }
             }
         }
 
@@ -377,9 +407,18 @@ namespace OpenQA.Selenium.Appium.WebSocket
         {
             if (disposing)
             {
-                DisconnectAsync().Wait();
+                try
+                {
+                    _cancellationTokenSource?.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Ignore if CTS was already disposed
+                }
+
                 _clientWebSocket?.Dispose();
                 _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
                 _connectionLock?.Dispose();
             }
         }
