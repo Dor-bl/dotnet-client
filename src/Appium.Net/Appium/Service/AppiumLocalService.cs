@@ -179,7 +179,7 @@ namespace OpenQA.Selenium.Appium.Service
                 if (process.WaitForExit(timeoutMs))
                     return true;
             }
-            catch
+            catch (Exception)
             {
                 // Ignore exceptions, fallback to Kill
             }
@@ -229,7 +229,7 @@ namespace OpenQA.Selenium.Appium.Service
                     Service.Kill();
                 }
             }
-            catch
+            catch (Exception)
             {
                 // Optionally log or handle exceptions
             }
