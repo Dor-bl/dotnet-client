@@ -330,14 +330,23 @@ namespace OpenQA.Selenium.Appium
         private static double TryConvertToDouble(object value)
         {
             if (value == null) return 0.0;
-            try
+
+            switch (value)
             {
-                return Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                case double d:
+                    return d;
+                case float f:
+                    return f;
+                case int i:
+                    return i;
+                case long l:
+                    return l;
+                case decimal m:
+                    return (double)m;
             }
-            catch (Exception e) when (e is FormatException || e is InvalidCastException || e is OverflowException)
-            {
-                return 0.0;
-            }
+
+            string strValue = Convert.ToString(value, CultureInfo.InvariantCulture);
+            return double.TryParse(strValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var result) ? result : 0.0;
         }
 
         #endregion MJsonMethod Members
