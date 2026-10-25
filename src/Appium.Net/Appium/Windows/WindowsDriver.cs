@@ -27,6 +27,16 @@ namespace OpenQA.Selenium.Appium.Windows
         private static readonly string Platform = MobilePlatform.Windows;
 
         /// <summary>
+        /// Initializes a new instance of the WindowsDriver class using ICommandExecutor and Appium options
+        /// </summary>
+        /// <param name="commandExecutor">An <see cref="ICommandExecutor"/> object which executes commands for the driver.</param>
+        /// <param name="appiumOptions">An <see cref="ICapabilities"/> object containing the Appium options.</param>
+        public WindowsDriver(ICommandExecutor commandExecutor, AppiumOptions appiumOptions)
+            : base(commandExecutor, SetPlatformToCapabilities(appiumOptions, Platform))
+        {
+        }
+
+        /// <summary>
         /// Initializes a new instance of the WindowsDriver class using Appium options
         /// </summary>
         /// <param name="AppiumOptions">An <see cref="AppiumOptions"/> object containing the Appium options of the browser.</param>
@@ -161,7 +171,7 @@ namespace OpenQA.Selenium.Appium.Windows
         public override string Context
         {
             get => "NATIVE_APP";
-            set => throw new NotImplementedException();
+            set => throw new NotSupportedException();
         }
 
         public override ReadOnlyCollection<string> Contexts
@@ -178,9 +188,9 @@ namespace OpenQA.Selenium.Appium.Windows
         public new void HideKeyboard(string key) =>
             AppiumCommandExecutionHelper.HideKeyboard(this, key);
 
-        public void PressKeyCode(KeyEvent keyEvent) => throw new NotImplementedException();
+        public void PressKeyCode(KeyEvent keyEvent) => throw new NotSupportedException();
 
-        public void LongPressKeyCode(KeyEvent keyEvent) => throw new NotImplementedException();
+        public void LongPressKeyCode(KeyEvent keyEvent) => throw new NotSupportedException();
 
         public void PressKeyCode(int keyCode, int metastate = -1) =>
             AppiumCommandExecutionHelper.PressKeyCode(this, keyCode, metastate);
