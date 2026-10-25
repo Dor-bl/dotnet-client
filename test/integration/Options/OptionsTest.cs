@@ -49,5 +49,13 @@ namespace Appium.Net.Integration.Tests.Options
             Assert.That(capsDict, Is.Not.Empty);
             Assert.That(capsDict, Has.Count.EqualTo(5));
         }
+
+        [Test]
+        public void AddAdditionalOptionThrowsNotSupportedException()
+        {
+            var capabilities = new AppiumOptions();
+            var ex = Assert.Throws<System.NotSupportedException>(() => capabilities.AddAdditionalOption("option", "value"));
+            Assert.That(ex.Message, Is.EqualTo("Use the AddAdditionalAppiumOption method for adding additional options"));
+        }
     }
 }
