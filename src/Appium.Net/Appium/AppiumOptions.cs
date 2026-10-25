@@ -90,12 +90,12 @@ namespace OpenQA.Selenium.Appium
         /// </summary>
         /// <param name="optionName">The name of the additional option.</param>
         /// <param name="optionValue">The value of the additional option.</param>
-        /// <exception cref="NotImplementedException">
+        /// <exception cref="NotSupportedException">
         /// Thrown to indicate that <see cref="AddAdditionalAppiumOption"/> should be used for adding additional options.
         /// </exception>
         public override void AddAdditionalOption(string optionName, object optionValue)
         {
-            throw new NotImplementedException("Use the AddAdditionalAppiumOption method for adding additional options");
+            throw new NotSupportedException("Use the AddAdditionalAppiumOption method for adding additional options");
         }
 
         /// <summary>
