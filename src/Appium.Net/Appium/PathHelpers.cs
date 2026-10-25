@@ -19,6 +19,10 @@ namespace OpenQA.Selenium.Appium
             "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
         };
 
+        private static readonly char[] PathSeparators = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+
+        private static readonly HashSet<char> InvalidFileNameCharsSet = new HashSet<char>(Path.GetInvalidFileNameChars());
+
         public static string ValidateAndGetFullPath(string fileName)
         {
             if (fileName is null)
@@ -36,9 +40,7 @@ namespace OpenQA.Selenium.Appium
                 throw new ArgumentException("The file name contains invalid characters.", nameof(fileName));
             }
 
-            var invalidFileNameChars = Path.GetInvalidFileNameChars();
-            var separators = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
-            string[] parts = fileName.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = fileName.Split(PathSeparators, StringSplitOptions.RemoveEmptyEntries);
 
             for (int i = 0; i < parts.Length; i++)
             {
@@ -55,7 +57,7 @@ namespace OpenQA.Selenium.Appium
 
                 foreach (char c in part)
                 {
-                    if (Array.IndexOf(invalidFileNameChars, c) >= 0)
+                    if (InvalidFileNameCharsSet.Contains(c))
                     {
                         if (IsWindows && c == ':' && i == 0 && part.Length == 2 && char.IsLetter(part[0]) && part[1] == ':')
                         {
@@ -68,10 +70,13 @@ namespace OpenQA.Selenium.Appium
 
             string currentDirectory = Directory.GetCurrentDirectory();
             string allowedDirectory = Path.GetFullPath(currentDirectory);
-            if (!allowedDirectory.EndsWith(Path.DirectorySeparatorChar.ToString()) &&
-                !allowedDirectory.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+            if (allowedDirectory.Length > 0)
             {
-                allowedDirectory += Path.DirectorySeparatorChar;
+                char lastChar = allowedDirectory[allowedDirectory.Length - 1];
+                if (lastChar != Path.DirectorySeparatorChar && lastChar != Path.AltDirectorySeparatorChar)
+                {
+                    allowedDirectory += Path.DirectorySeparatorChar;
+                }
             }
 
             string fullPath = Path.GetFullPath(Path.Combine(currentDirectory, fileName));
@@ -102,8 +107,7 @@ namespace OpenQA.Selenium.Appium
                 return false;
             }
 
-            var separators = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
-            string[] parts = relativePath.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = relativePath.Split(PathSeparators, StringSplitOptions.RemoveEmptyEntries);
 
             string currentPath = allowedDirectory;
             foreach (string part in parts)
