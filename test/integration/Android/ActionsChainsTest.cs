@@ -100,7 +100,13 @@ namespace Appium.Net.Integration.Tests.Android
             var touch = new PointerInputDevice(PointerKind.Touch, "finger");
             var sequence = new ActionSequence(touch);
 
-            var move = touch.CreatePointerMove(elementToTouch, 0, 0, TimeSpan.FromSeconds(1));
+            Point point = new()
+            {
+                X = elementToTouch.Rect.X + elementToTouch.Rect.Width / 2,
+                Y = elementToTouch.Rect.Y + elementToTouch.Rect.Height / 2
+            };
+
+            var move = touch.CreatePointerMove(CoordinateOrigin.Viewport, point.X, point.Y, TimeSpan.FromSeconds(1));
             var actionPress = touch.CreatePointerDown(PointerButton.TouchContact);
             var pause = touch.CreatePause(TimeSpan.FromMilliseconds(250));
             var actionRelease = touch.CreatePointerUp(PointerButton.TouchContact);
