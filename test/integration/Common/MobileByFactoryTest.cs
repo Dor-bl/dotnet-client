@@ -111,6 +111,28 @@ namespace Appium.Net.Integration.Tests.Common
         }
 
         [Test]
+        public void FindElementsWrapsListReturnedByFinder()
+        {
+            var first = new FakeWebElement();
+            var second = new FakeWebElement();
+            var finder = new FakeFinder(elementsToReturn: new List<IWebElement> { first, second });
+
+            var found = MobileBy.TizenAutomation("selector").FindElements(finder);
+
+            Assert.That(found, Is.EqualTo(new IWebElement[] { first, second }));
+        }
+
+        [Test]
+        public void FindElementsThrowsArgumentNullExceptionWhenFinderReturnsNull()
+        {
+            var finder = new FakeFinder();
+
+            var ex = Assert.Throws<ArgumentNullException>((Action)(() => MobileBy.TizenAutomation("selector").FindElements(finder)));
+
+            Assert.That(ex.ParamName, Is.EqualTo("collection"));
+        }
+
+        [Test]
         public void FindElementThrowsWhenContextDoesNotSupportSelector()
         {
             var by = MobileBy.AndroidDataMatcher("selector");
