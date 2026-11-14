@@ -35,7 +35,17 @@ namespace OpenQA.Selenium.Appium
             options[name] = value;
         }
 
-        internal static long? ToSeconds(TimeSpan? value) => value.HasValue ? (long?)value.Value.TotalSeconds : null;
+        internal static long? ToSeconds(TimeSpan? value)
+        {
+            if (!value.HasValue)
+            {
+                return null;
+            }
+
+            return value.Value > TimeSpan.Zero
+                ? (long)Math.Ceiling(value.Value.TotalSeconds)
+                : (long)value.Value.TotalSeconds;
+        }
 
         internal static long? ToMilliseconds(TimeSpan? value) => value.HasValue ? (long?)value.Value.TotalMilliseconds : null;
     }

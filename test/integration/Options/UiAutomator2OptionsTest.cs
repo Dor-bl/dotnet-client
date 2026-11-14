@@ -108,5 +108,18 @@ namespace Appium.Net.Integration.Tests.Options
 
             Assert.Throws<ArgumentException>(() => options.AddAdditionalAppiumOption(name, "value"));
         }
+
+        [TestCase(0, 0L)]
+        [TestCase(500, 1L)]
+        [TestCase(1500, 2L)]
+        public void NewCommandTimeoutRoundsPositiveDurationsUpToWholeSeconds(int milliseconds, long expectedSeconds)
+        {
+            var options = new UiAutomator2Options
+            {
+                NewCommandTimeout = TimeSpan.FromMilliseconds(milliseconds)
+            };
+
+            Assert.That(options.ToCapabilities().GetCapability("appium:newCommandTimeout"), Is.EqualTo(expectedSeconds));
+        }
     }
 }
