@@ -46,6 +46,18 @@ namespace OpenQA.Selenium.Appium.iOS
             });
         }
 
+        public static void ToggleTouchIdEnrollment(IExecuteMethod executeMethod, bool enabled)
+        {
+            executeMethod.Execute(DriverCommand.ExecuteScript, new Dictionary<string, object> {
+                ["script"] = "mobile:enrollBiometric",
+                ["args"] = new object[] {
+                    new Dictionary<string, object>{
+                        ["isEnabled"] = enabled
+                    }
+                }
+            });
+        }
+
         public static void SetClipboardUrl(IExecuteMethod executeMethod, string url)
         {
             var urlEncoded = WebUtility.UrlEncode(url);
